@@ -1,0 +1,73 @@
+name: Build VialFX-Bundle
+
+# Current scope: VST3 on Linux and Windows only (CLAP and macOS are switched off in CMake).
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install JUCE build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ninja-build xvfb \
+            libx11-dev libxext-dev libxrandr-dev libxinerama-dev libxcursor-dev \
+            libfreetype-dev libfontconfig1-dev libasound2-dev libgl1-mesa-dev \
+            libglu1-mesa-dev libcurl4-openssl-dev libgl1-mesa-dri
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build all nine plugins
+        run: cmake --build build
+
+      - name: Load every plugin in a test host
+        run: |
+          for p in build/plugins/*_artefacts/Release/VST3/*.vst3; do
+            echo "=== $p"
+            xvfb-run -a -s "-screen 0 1280x800x24 +extension GLX" \
+              build/vialfx_host_test_artefacts/Release/vialfx_host_test "$p"
+          done
+
+      - name: Collect bundle
+        run: |
+          mkdir -p VialFX-Bundle/VST3
+          cp -r build/plugins/*_artefacts/Release/VST3/*.vst3 VialFX-Bundle/VST3/
+          cp LICENSE VialFX-Bundle/
+          tar czf VialFX-Bundle-linux-vst3.tar.gz VialFX-Bundle
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VialFX-Bundle-linux-vst3
+          path: VialFX-Bundle-linux-vst3.tar.gz
+
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DVITALFX_BUILD_TESTS=OFF
+
+      - name: Build all nine plugins
+        run: cmake --build build
+
+      - name: Collect bundle
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force VialFX-Bundle/VST3 | Out-Null
+          Get-ChildItem build/plugins/*_artefacts/Release/VST3/*.vst3 | Copy-Item -Destination VialFX-Bundle/VST3 -Recurse
+          Copy-Item LICENSE VialFX-Bundle/
+          Compress-Archive -Path VialFX-Bundle -DestinationPath VialFX-Bundle-windows-vst3.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VialFX-Bundle-windows-vst3
+          path: VialFX-Bundle-windows-vst3.zip

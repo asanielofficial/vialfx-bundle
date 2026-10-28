@@ -103,7 +103,12 @@ function(vitalfx_add_plugin)
 
   # Vital's code predates these warnings being useful; keep the build output readable.
   if(MSVC)
-    target_compile_options(${P_NAME} PRIVATE /w /bigobj)
+    target_compile_options(${P_NAME} PRIVATE /W0 /bigobj)
+    # MSVC does not define __SSE2__, and JUCE's juce_dsp.h then defines it as an EMPTY macro, which
+    # breaks Vital's "#elif __SSE2__" in poly_values.h (error C1017). Vital's own Windows project
+    # defines it as 1 on the command line, so JUCE leaves it alone. Same for the aligned-storage
+    # switch that Vital's SIMD types need with MSVC's standard containers.
+    target_compile_definitions(${P_NAME} PRIVATE __SSE2__=1 _ENABLE_EXTENDED_ALIGNED_STORAGE)
   else()
     target_compile_options(${P_NAME} PRIVATE -w)
   endif()

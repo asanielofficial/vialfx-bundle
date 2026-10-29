@@ -74,6 +74,19 @@ jobs:
           name: VialFX-Bundle-windows
           path: VialFX-Bundle-windows.zip
 
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; }
+          & $iscc "/DSourceDir=$PWD\VialFX-Bundle" "/DOutputDir=$PWD" installer\windows\vialfx.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VialFX-Bundle-Setup-windows
+          path: VialFX-Bundle-Setup-windows.exe
+
   macos:
     runs-on: macos-14
     steps:

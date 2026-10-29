@@ -1,6 +1,6 @@
 name: Build VialFX-Bundle
 
-# Current scope: VST3 on Linux, Windows and macOS (CLAP is switched off in CMake).
+# Current scope: VST3 and CLAP on Linux, Windows and macOS.
 on:
   push:
   pull_request:
@@ -36,15 +36,16 @@ jobs:
 
       - name: Collect bundle
         run: |
-          mkdir -p VialFX-Bundle/VST3
+          mkdir -p VialFX-Bundle/VST3 VialFX-Bundle/CLAP
           cp -r build/plugins/*_artefacts/Release/VST3/*.vst3 VialFX-Bundle/VST3/
+          cp build/plugins/*_artefacts/Release/CLAP/*.clap VialFX-Bundle/CLAP/
           cp LICENSE VialFX-Bundle/
-          tar czf VialFX-Bundle-linux-vst3.tar.gz VialFX-Bundle
+          tar czf VialFX-Bundle-linux.tar.gz VialFX-Bundle
 
       - uses: actions/upload-artifact@v4
         with:
-          name: VialFX-Bundle-linux-vst3
-          path: VialFX-Bundle-linux-vst3.tar.gz
+          name: VialFX-Bundle-linux
+          path: VialFX-Bundle-linux.tar.gz
 
   windows:
     runs-on: windows-2022
@@ -62,15 +63,16 @@ jobs:
       - name: Collect bundle
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force VialFX-Bundle/VST3 | Out-Null
+          New-Item -ItemType Directory -Force VialFX-Bundle/VST3, VialFX-Bundle/CLAP | Out-Null
           Get-ChildItem build/plugins/*_artefacts/Release/VST3/*.vst3 | Copy-Item -Destination VialFX-Bundle/VST3 -Recurse
+          Get-ChildItem build/plugins/*_artefacts/Release/CLAP/*.clap | Copy-Item -Destination VialFX-Bundle/CLAP
           Copy-Item LICENSE VialFX-Bundle/
-          Compress-Archive -Path VialFX-Bundle -DestinationPath VialFX-Bundle-windows-vst3.zip
+          Compress-Archive -Path VialFX-Bundle -DestinationPath VialFX-Bundle-windows.zip
 
       - uses: actions/upload-artifact@v4
         with:
-          name: VialFX-Bundle-windows-vst3
-          path: VialFX-Bundle-windows-vst3.zip
+          name: VialFX-Bundle-windows
+          path: VialFX-Bundle-windows.zip
 
   macos:
     runs-on: macos-14
@@ -88,13 +90,14 @@ jobs:
 
       - name: Ad-hoc sign and collect bundle
         run: |
-          mkdir -p VialFX-Bundle/VST3
+          mkdir -p VialFX-Bundle/VST3 VialFX-Bundle/CLAP
           cp -R build/plugins/*_artefacts/Release/VST3/*.vst3 VialFX-Bundle/VST3/
-          for p in VialFX-Bundle/VST3/*.vst3; do codesign --force --deep -s - "$p"; done
+          cp -R build/plugins/*_artefacts/Release/CLAP/*.clap VialFX-Bundle/CLAP/
+          for p in VialFX-Bundle/VST3/*.vst3 VialFX-Bundle/CLAP/*.clap; do codesign --force --deep -s - "$p"; done
           cp LICENSE VialFX-Bundle/
-          ditto -c -k --keepParent VialFX-Bundle VialFX-Bundle-macos-vst3.zip
+          ditto -c -k --keepParent VialFX-Bundle VialFX-Bundle-macos.zip
 
       - uses: actions/upload-artifact@v4
         with:
-          name: VialFX-Bundle-macos-vst3
-          path: VialFX-Bundle-macos-vst3.zip
+          name: VialFX-Bundle-macos
+          path: VialFX-Bundle-macos.zip

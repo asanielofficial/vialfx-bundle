@@ -14,8 +14,8 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-# Current scope: VST3 on Windows, Linux and macOS. CLAP is wired up but off by default.
-option(VITALFX_ENABLE_CLAP "Also build CLAP versions (needs clap-juce-extensions)" OFF)
+# Current scope: VST3 on Windows, Linux and macOS. CLAP is built alongside VST3 (disable with -DVITALFX_ENABLE_CLAP=OFF).
+option(VITALFX_ENABLE_CLAP "Also build CLAP versions (needs clap-juce-extensions)" ON)
 
 include(FetchContent)
 set(FETCHCONTENT_QUIET OFF)

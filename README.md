@@ -16,10 +16,9 @@ Presets are saved as `.vialfx` files in `Documents/VialFX/Bundle/<Effect>/User/P
 
 | | Linux | Windows | macOS | CLAP |
 |---|---|---|---|---|
-| VST3 | built and tested here (Reverb) | built by CI | off for now | off for now |
+| VST3 | built and tested here (Reverb) | built by CI | built by CI (universal Intel + Apple Silicon, ad-hoc signed, untested on hardware) | off for now |
 
-CLAP and macOS are wired into CMake but switched off while testing:
-`-DVITALFX_ENABLE_CLAP=ON` and `-DVITALFX_ENABLE_MACOS=ON`.
+CLAP is wired into CMake but switched off while testing: `-DVITALFX_ENABLE_CLAP=ON`.
 
 ## Building
 

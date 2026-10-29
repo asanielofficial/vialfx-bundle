@@ -1,4 +1,10 @@
 cmake_minimum_required(VERSION 3.22)
+
+# macOS: universal binary (Intel + Apple Silicon). Must be set before project().
+if(APPLE)
+  set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "")
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "")
+endif()
 project(VialFX-Bundle VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -8,13 +14,8 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-# Current scope: VST3 on Windows and Linux. CLAP and macOS are wired up but off by default.
+# Current scope: VST3 on Windows, Linux and macOS. CLAP is wired up but off by default.
 option(VITALFX_ENABLE_CLAP "Also build CLAP versions (needs clap-juce-extensions)" OFF)
-option(VITALFX_ENABLE_MACOS "Allow macOS builds (untested)" OFF)
-
-if(APPLE AND NOT VITALFX_ENABLE_MACOS)
-  message(FATAL_ERROR "macOS builds are disabled for now. Pass -DVITALFX_ENABLE_MACOS=ON to try them.")
-endif()
 
 include(FetchContent)
 set(FETCHCONTENT_QUIET OFF)

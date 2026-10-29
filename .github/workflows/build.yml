@@ -80,7 +80,7 @@ jobs:
       - name: Install Ninja
         run: brew install ninja
 
-      - name: Configure (universal: x86_64 + arm64)
+      - name: Configure (universal x86_64 + arm64)
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DVITALFX_BUILD_TESTS=OFF
 
       - name: Build all nine plugins

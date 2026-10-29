@@ -152,7 +152,7 @@ void SaveSection::setSaveBounds() {
   Rectangle<int> save_rect = getSaveRect();
   body_.setBounds(save_rect);
   int padding_x = size_ratio_ * kPaddingX;
-  int padding_y = size_ratio_ * kPaddingX;
+  int padding_y = size_ratio_ * kPaddingY;
   int style_padding_x = size_ratio_ * kStylePaddingX;
   int style_padding_y = size_ratio_ * kStylePaddingY;
   int division = size_ratio_ * kDivision;
@@ -182,46 +182,28 @@ void SaveSection::setSaveBounds() {
   if (name_ == nullptr || author_ == nullptr || comments_ == nullptr)
     return;
 
+  // VialFX compact layout: Name + Author only (comments and style are not used), Save / Cancel below.
   name_->setVisible(true);
   author_->setVisible(true);
-  comments_->setVisible(saving_preset_);
+  comments_->setVisible(false);
+  style_text_->setVisible(false);
+  comments_text_->setVisible(false);
   for (int i = 0; i < LoadSave::kNumPresetStyles; ++i)
-    style_buttons_[i]->setVisible(saving_preset_);
+    style_buttons_[i]->setVisible(false);
 
   int editor_height = kTextEditorHeight * size_ratio_;
+  int row_gap = 10 * size_ratio_;
   int editor_x = save_rect.getX() + padding_x + division;
   int editor_width = save_rect.getWidth() - 2 * padding_x - division;
-  name_->setBounds(editor_x, save_rect.getY() + padding_y + extra_top_padding,
-                   editor_width, editor_height);
-  author_->setBounds(editor_x, save_rect.getY() + 2 * padding_y + editor_height + extra_top_padding,
-                     editor_width, editor_height);
+  int name_y = save_rect.getY() + padding_y;
+  int author_y = name_y + editor_height + row_gap;
+  name_->setBounds(editor_x, name_y, editor_width, editor_height);
+  author_->setBounds(editor_x, author_y, editor_width, editor_height);
+  comments_->setBounds(0, 0, 0, 0);
 
-  int style_width = editor_width + style_padding_x;
-  int style_y = save_rect.getY() + 3 * padding_y + 2 * editor_height + extra_top_padding;
-  int num_in_row = LoadSave::kNumPresetStyles / 3;
-  for (int i = 0; i < LoadSave::kNumPresetStyles; ++i) {
-    int column = i % num_in_row;
-    int x = editor_x + (style_width * column) / num_in_row;
-    int next_x = editor_x + (style_width * (column + 1)) / num_in_row;
-    int width = next_x - x - style_padding_x;
-    int y = style_y + (i / num_in_row) * (style_button_height + style_padding_y);
-    style_buttons_[i]->setBounds(x, y, width, style_button_height);
-  }
-
-  int comments_y = style_y + 3 * style_button_height + 2 * style_padding_y + padding_y;
-  int comments_height = save_button_->getY() - comments_y - padding_y;
-  comments_->setBounds(editor_x, comments_y, editor_width, comments_height);
-  
   float text_width = division - 10 * size_ratio_;
-  preset_text_->setBounds(text_x, text_y + padding_y, text_width, name_->getHeight());
-  author_text_->setBounds(text_x, text_y + 2 * padding_y + name_->getHeight(),
-                          text_width, name_->getHeight());
-
-  int style_height = 3 * style_button_height + 2 * style_padding_y;
-  style_text_->setBounds(text_x, text_y + 3 * padding_y + 2 * name_->getHeight(),
-                         text_width, style_height);
-  comments_text_->setBounds(text_x, text_y + 4 * padding_y + style_height + 2 * name_->getHeight(),
-                            text_width, author_->getHeight());
+  preset_text_->setBounds(text_x, name_y, text_width, editor_height);
+  author_text_->setBounds(text_x, author_y, text_width, editor_height);
 
   Font editor_font = Fonts::instance()->proportional_light().withPointHeight(editor_height * 0.6f);
   setTextColors(name_.get(), file_type_ + " " + TRANS("Name"));
@@ -331,7 +313,7 @@ Rectangle<int> SaveSection::getSaveRect() {
   int save_width = kSaveWidth * size_ratio_;
   int save_height = kSavePresetHeight * size_ratio_;
   if (!saving_preset_)
-    save_height = (kTextEditorHeight * 2 + kButtonHeight + kPaddingY * 4 + kExtraTopPadding) * size_ratio_;
+    save_height = (kTextEditorHeight * 2 + kButtonHeight + kPaddingY * 3 + 10) * size_ratio_;
 
   int x = (getWidth() - save_width) / 2;
   int y = (getHeight() - save_height) / 2;

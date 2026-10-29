@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
     editor->setTopLeftPosition(40, 40);
     editor->addToDesktop(ComponentPeer::windowHasTitleBar);
     editor->setVisible(true);
-    MessageManager::getInstance()->runDispatchLoopUntil(15000);
+    MessageManager::getInstance()->runDispatchLoopUntil(60000);
     editor->removeFromDesktop();
     return 0;
   }

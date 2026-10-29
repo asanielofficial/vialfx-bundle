@@ -1732,6 +1732,15 @@ std::vector<std::string> LoadSave::getAdditionalFolders(const std::string& name)
 }
 
 File LoadSave::getDataDirectory() {
+#ifdef VITALFX_EFFECT
+  // VialFX: presets live in <Documents>/VialFX/Bundle/<Effect>/ (User/Presets/... inside it).
+  static const char* const kVialFxFolders[] = { "Chorus", "Compressor", "Delay", "Distortion", "EQ",
+                                                "Filter", "Flanger", "Phaser", "Reverb" };
+  File vialfx_directory = File::getSpecialLocation(File::userDocumentsDirectory)
+                              .getChildFile("VialFX").getChildFile("Bundle")
+                              .getChildFile(kVialFxFolders[VITALFX_EFFECT]);
+  return vialfx_directory;
+#endif
   json data = getConfigJson();
   if (data.count("data_directory")) {
     std::string path = data["data_directory"];

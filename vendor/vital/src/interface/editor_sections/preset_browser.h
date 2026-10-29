@@ -81,11 +81,12 @@ class PresetList : public SynthSection, public TextEditor::Listener, ScrollBar::
 
     static constexpr int kNumCachedRows = 50;
     static constexpr float kRowSizeHeightPercent = 0.04f;
-    static constexpr float kStarWidthPercent = 0.04f;
-    static constexpr float kNameWidthPercent = 0.35f;
-    static constexpr float kStyleWidthPercent = 0.18f;
-    static constexpr float kAuthorWidthPercent = 0.25f;
-    static constexpr float kDateWidthPercent = 0.18f;
+    static constexpr float kRowHeight = 22.0f;
+    static constexpr float kStarWidthPercent = 0.08f;
+    static constexpr float kNameWidthPercent = 0.42f;
+    static constexpr float kStyleWidthPercent = 0.0f;   // VialFX: style column removed
+    static constexpr float kAuthorWidthPercent = 0.28f;
+    static constexpr float kDateWidthPercent = 0.22f;
     static constexpr float kScrollSensitivity = 200.0f;
 
     class FileNameAscendingComparator {
@@ -224,7 +225,8 @@ class PresetList : public SynthSection, public TextEditor::Listener, ScrollBar::
     void setPresets(Array<File> presets);
     void mouseWheelMove(const MouseEvent& e, const MouseWheelDetails& wheel) override;
     int getRowFromPosition(float mouse_position);
-    int getRowHeight() { return getHeight() * kRowSizeHeightPercent; }
+    // VialFX: fixed-size rows (the original used a percentage of the browser height, which collapses to 0 in a small window).
+    int getRowHeight() { return std::max(1, static_cast<int>(kRowHeight * size_ratio_)); }
     void mouseMove(const MouseEvent& e) override;
     void mouseExit(const MouseEvent& e) override;
     void respondToMenuCallback(int result);

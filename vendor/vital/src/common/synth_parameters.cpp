@@ -584,6 +584,14 @@ namespace vital {
     }
 
     details_lookup_["osc_1_on"].default_value = 1.0f;
+#ifdef VITALFX_EFFECT
+    // VialFX: the one effect in this plugin is on by default (so "Init Preset" keeps it running).
+    {
+      static const char* const kVialFxOn[] = { "chorus_on", "compressor_on", "delay_on", "distortion_on", "eq_on",
+                                               "filter_fx_on", "flanger_on", "phaser_on", "reverb_on" };
+      details_lookup_[kVialFxOn[VITALFX_EFFECT]].default_value = 1.0f;
+    }
+#endif
     details_lookup_["osc_2_destination"].default_value = 1.0f;
     details_lookup_["osc_3_destination"].default_value = 3.0f;
     details_lookup_["filter_1_osc1_input"].default_value = 1.0f;

@@ -49,7 +49,7 @@ namespace vital {
   constexpr wchar_t kDefaultKeyboardOctaveDown = 'z';
   const std::wstring kDefaultKeyboard = L"awsedftgyhujkolp;'";
 
-  const std::string kPresetExtension = "vital";
+  const std::string kPresetExtension = "vialfx";
   const std::string kWavetableExtension = "vitaltable";
   const std::string kWavetableExtensionsList = "*." + vital::kWavetableExtension + ";*.wav;*.flac";
   const std::string kSampleExtensionsList = "*.wav;*.flac";

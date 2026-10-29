@@ -387,10 +387,14 @@ struct Component::ComponentHelpers
     template <typename PointOrRect>
     static PointOrRect convertCoordinate (const Component* target, const Component* source, PointOrRect p)
     {
-        float total_scaling = source->getTotalPixelScaling();
+        // VialFX: guard against a null source (getLocalPoint (nullptr, ...) is used by internalMouseUp).
+        float total_scaling = 1.0f;
         Component* top = nullptr;
-        if (source)
+        if (source != nullptr)
+        {
+            total_scaling = source->getTotalPixelScaling();
             top = source->getTopLevelComponent();
+        }
         while (source != nullptr)
         {
             if (source == target)

@@ -6,7 +6,9 @@ namespace vitalfx {
 File getUserPresetDirectory(const EffectInfo& info) {
   File dir = File::getSpecialLocation(File::userDocumentsDirectory)
                  .getChildFile("VialFX")
+                 .getChildFile("Bundle")
                  .getChildFile(info.preset_folder)
+                 .getChildFile("User")
                  .getChildFile("Presets");
   if (!dir.exists())
     dir.createDirectory();

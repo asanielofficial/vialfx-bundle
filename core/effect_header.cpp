@@ -5,17 +5,29 @@
 #include "synth_button.h"
 
 namespace {
-  // Simple gear icon, drawn in the 0..1 unit square like Vital's other button shapes.
+  // Cogwheel icon (8 trapezoid teeth around a ring, centre hole), in the 0..1 unit square.
   Path makeGearPath() {
-    Path gear;
-    gear.addStar(Point<float>(0.5f, 0.5f), 8, 0.30f, 0.42f, 0.0f);
-    gear.addEllipse(0.5f - 0.33f, 0.5f - 0.33f, 0.66f, 0.66f);
-    gear.setUsingNonZeroWinding(true);
+    constexpr int kTeeth = 8;
+    const float pi = MathConstants<float>::pi;
+    const float outer = 0.48f, root = 0.37f, hole = 0.16f;
+    const float tip_half = 0.17f, base_half = 0.27f;
 
-    Path hole;
-    hole.addEllipse(0.5f - 0.13f, 0.5f - 0.13f, 0.26f, 0.26f);
-    gear.addPath(hole);
-    gear.setUsingNonZeroWinding(false);  // even-odd so the hole stays empty
+    Path gear;
+    for (int i = 0; i < kTeeth; ++i) {
+      float a = 2.0f * pi * i / kTeeth;
+      const float radii[4] = { root, outer, outer, root };
+      const float angles[4] = { a - base_half, a - tip_half, a + tip_half, a + base_half };
+      for (int k = 0; k < 4; ++k) {
+        Point<float> pt(0.5f + radii[k] * std::cos(angles[k]), 0.5f + radii[k] * std::sin(angles[k]));
+        if (i == 0 && k == 0)
+          gear.startNewSubPath(pt);
+        else
+          gear.lineTo(pt);
+      }
+    }
+    gear.closeSubPath();
+    gear.addEllipse(0.5f - hole, 0.5f - hole, 2.0f * hole, 2.0f * hole);
+    gear.setUsingNonZeroWinding(false);  // even-odd keeps the centre hole open
     return gear;
   }
 }
@@ -37,6 +49,13 @@ EffectHeader::EffectHeader() : SynthSection("header_section") {
   addOpenGlComponent(settings_button_->getGlComponent());
   settings_button_->addListener(this);
   settings_button_->setShape(makeGearPath());
+
+  spectrogram_ = std::make_unique<Spectrogram>();
+  addOpenGlComponent(spectrogram_.get());
+  spectrogram_->paintBackgroundLines(false);
+  spectrogram_->setMinDb(-40.0f);
+  spectrogram_->setMaxDb(0.0f);
+  spectrogram_->setInterceptsMouseClicks(false, false);
 
   setSkinOverride(Skin::kHeader);
 }
@@ -69,26 +88,26 @@ void EffectHeader::resized() {
   const int height = getHeight();
   const int width = getWidth();
   const int large_padding = findValue(Skin::kLargePadding);
-  const int logo_width = findValue(Skin::kModulationButtonWidth);
-  logo_section_->setBounds(large_padding, 0, logo_width, height);
+  const int widget_margin = findValue(Skin::kWidgetMargin);
+  logo_section_->setBounds(0, 0, 0, height);
 
-  // Settings button sits flush right, volume + meter to its left, preset selector in the middle.
-  const int settings_size = static_cast<int>(height * 0.6f);
-  const int settings_y = (height - settings_size) / 2;
-  settings_button_->setBounds(width - large_padding - settings_size, settings_y, settings_size, settings_size);
+  // Left: small spectrum.  Centre: preset selector (centred on the window).  Right: volume + cog.
+  const int side_width = std::max(1, width / 5);
+  spectrogram_->setColour(Skin::kBody, findColour(Skin::kBackground, true));
+  spectrogram_->setBounds(large_padding, widget_margin, side_width, height - 2 * widget_margin);
+
+  const int settings_size = static_cast<int>(height * 0.55f);
+  settings_button_->setBounds(width - large_padding - settings_size, (height - settings_size) / 2,
+                              settings_size, settings_size);
 
   const int component_padding = 12 * size_ratio_;
-  const int volume_width = std::max(1, width / 5);
-  const int volume_x = settings_button_->getX() - component_padding - volume_width;
-  volume_section_->setBounds(volume_x, 0, volume_width, height);
+  const int volume_x = settings_button_->getX() - component_padding - side_width;
+  volume_section_->setBounds(volume_x, 0, side_width, height);
 
   const int selector_height = static_cast<int>(height * 0.6f);
-  const int selector_y = (height - selector_height) / 2;
-  const int left_limit = logo_section_->getRight() + component_padding;
-  const int right_limit = volume_x - component_padding;
-  const int selector_width = std::max(1, std::min(width / 3, right_limit - left_limit));
-  const int selector_x = left_limit + (right_limit - left_limit - selector_width) / 2;
-  preset_selector_->setBounds(selector_x, selector_y, selector_width, selector_height);
+  const int selector_width = std::max(1, std::min(width / 3, volume_x - spectrogram_->getRight() - 2 * component_padding));
+  preset_selector_->setBounds((width - selector_width) / 2, (height - selector_height) / 2,
+                              selector_width, selector_height);
 
   SynthSection::resized();
 }

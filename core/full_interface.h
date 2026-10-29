@@ -34,7 +34,7 @@ class FullInterface : public SynthSection, public EffectHeader::Listener,
     static Point<int> getDesignSize();
 
     void setOscilloscopeMemory(const vital::poly_float*) { }
-    void setAudioMemory(const vital::StereoMemory*) { }
+    void setAudioMemory(const vital::StereoMemory* memory) { if (header_) header_->setAudioMemory(memory); }
 
     void paintBackground(Graphics& g) override;
     void copySkinValues(const Skin& skin);

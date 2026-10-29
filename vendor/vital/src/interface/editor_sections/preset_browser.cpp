@@ -108,7 +108,8 @@ void PresetList::paintBackground(Graphics& g) {
   g.setColour(lighten);
   g.fillRect(star_width, 0, 1, title_width);
   g.fillRect(star_width + name_width, 0, 1, title_width);
-  g.fillRect(star_width + name_width + style_width, 0, 1, title_width);
+  if (style_width > 0)
+    g.fillRect(star_width + name_width + style_width, 0, 1, title_width);
   g.fillRect(getWidth() - date_width, 0, 1, title_width);
 
   g.setColour(findColour(Skin::kTextComponentText, true));
@@ -122,7 +123,8 @@ void PresetList::paintBackground(Graphics& g) {
 
   g.drawText("Name", text_padding + star_width, 0, name_width, title_width, Justification::centredLeft);
   int style_x = star_width + name_width + text_padding;
-  g.drawText("Style", style_x, 0, style_width, title_width, Justification::centredLeft);
+  if (style_width > 0)
+    g.drawText("Style", style_x, 0, style_width, title_width, Justification::centredLeft);
   int author_x = star_width + name_width + text_padding + style_width;
   g.drawText("Author", author_x, 0, author_width, title_width, Justification::centredLeft);
   g.drawText("Date", getWidth() - date_width, 0, date_width - text_padding, title_width, Justification::centredRight);
@@ -195,7 +197,7 @@ int PresetList::getRowFromPosition(float mouse_position) {
 
 void PresetList::mouseMove(const MouseEvent& e) {
   hover_preset_ = getRowFromPosition(e.position.y);
-  if (hover_preset_ >= filtered_presets_.size())
+  if (hover_preset_ < 0 || hover_preset_ >= filtered_presets_.size())
     hover_preset_ = -1;
 }
 
@@ -514,7 +516,8 @@ void PresetList::loadBrowserCache(int start_index, int end_index) {
     g.setColour(text_color);
     g.setFont(font);
     g.drawText(name, name_x, 0, name_width   - 2 * text_padding, row_height, Justification::centredLeft, true);
-    g.drawText(style, style_x, 0, style_width - 2 * text_padding, row_height, Justification::centredLeft, true);
+    if (style_width > 0)
+      g.drawText(style, style_x, 0, style_width - 2 * text_padding, row_height, Justification::centredLeft, true);
     g.drawText(author, author_x, 0, author_width - 2 * text_padding, row_height, Justification::centredLeft, true);
     g.drawText(date, date_x, 0, date_width - 2 * text_padding, row_height, Justification::centredRight, true);
 
@@ -617,8 +620,7 @@ PresetBrowser::PresetBrowser() : SynthSection("preset_browser") {
     style_buttons_[i] = std::make_unique<OpenGlToggleButton>(strings::kPresetStyleNames[i]);
     style_buttons_[i]->addListener(this);
     style_buttons_[i]->setLookAndFeel(TextLookAndFeel::instance());
-    addAndMakeVisible(style_buttons_[i].get());
-    addOpenGlComponent(style_buttons_[i]->getGlComponent());
+    // VialFX: the style filter buttons are not shown (kept only so the filter code stays unchanged).
   }
 
   store_button_ = std::make_unique<OpenGlToggleButton>("Store");
@@ -628,11 +630,13 @@ PresetBrowser::PresetBrowser() : SynthSection("preset_browser") {
 
   preset_text_ = std::make_unique<PlainTextComponent>("Preset", "Preset name");
   addOpenGlComponent(preset_text_.get());
+  preset_text_->setVisible(false);
   preset_text_->setFontType(PlainTextComponent::kLight);
   preset_text_->setJustification(Justification::centredLeft);
 
   author_text_ = std::make_unique<PlainTextComponent>("Author", "Author");
   addOpenGlComponent(author_text_.get());
+  author_text_->setVisible(false);
   author_text_->setFontType(PlainTextComponent::kLight);
   author_text_->setJustification(Justification::centredLeft);
 
@@ -649,8 +653,9 @@ PresetBrowser::PresetBrowser() : SynthSection("preset_browser") {
   comments_->setSelectAllWhenFocused(false);
   comments_->setJustification(Justification::topLeft);
   comments_->setReadOnly(true);
-  addAndMakeVisible(comments_.get());
+  addChildComponent(comments_.get());
   addOpenGlComponent(comments_->getImageComponent());
+  comments_->setVisible(false);
   comments_->setMultiLine(true, true);
 #endif
 
@@ -667,27 +672,8 @@ PresetBrowser::~PresetBrowser() { }
 
 void PresetBrowser::paintBackground(Graphics& g) {
   Rectangle<int> search_rect = getSearchRect();
-  Rectangle<int> info_rect = getInfoRect();
   paintBody(g, search_rect);
   paintBorder(g, search_rect);
-  paintBody(g, info_rect);
-  paintBorder(g, info_rect);
-
-  int left_padding = kLeftPadding * size_ratio_;
-  int top_padding = kTopPadding * size_ratio_;
-  int middle_padding = kMiddlePadding * size_ratio_;
-
-  int text_x = info_rect.getX() + left_padding;
-  int text_width = info_rect.getWidth() - 2 * left_padding;
-  int name_y = info_rect.getY() + top_padding;
-  int name_height = kNameFontHeight * size_ratio_;
-  int author_y = name_y + name_height + middle_padding;
-  int author_height = kAuthorFontHeight * size_ratio_;
-  int comments_y = author_y + author_height + 2 * middle_padding;
-
-  g.setColour(findColour(Skin::kLightenScreen, true));
-  g.drawRect(text_x, author_y, text_width, 1);
-  g.drawRect(text_x, comments_y, text_width, 1);
 
   g.setColour(findColour(Skin::kWidgetBackground, true));
   int rounding = findValue(Skin::kWidgetRoundedCorner);
@@ -699,11 +685,10 @@ void PresetBrowser::paintBackground(Graphics& g) {
 
 void PresetBrowser::paintBackgroundShadow(Graphics& g) {
   paintTabShadow(g, getSearchRect());
-  paintTabShadow(g, getInfoRect());
 }
 
 void PresetBrowser::resized() {
-  static constexpr float kBrowseWidthRatio = 0.68f;
+  static constexpr float kBrowseWidthRatio = 0.66f;
   static constexpr float kSearchBoxRowHeightRatio = 1.3f;
 
   SynthSection::resized();
@@ -730,54 +715,29 @@ void PresetBrowser::resized() {
   if (isVisible())
     preset_list_->redoCache();
 
+  // VialFX compact layout: search box and folder list on the left, preset list on the right.
   Rectangle<int> search_rect = getSearchRect();
-  Rectangle<int> info_rect = getInfoRect();
   int top_padding = kTopPadding * size_ratio_;
   int left_padding = kLeftPadding * size_ratio_;
-  int middle_padding = kMiddlePadding * size_ratio_;
+  int content_x = search_rect.getX() + left_padding;
+  int content_width = search_rect.getWidth() - 2 * left_padding;
 
-  int name_y = info_rect.getY() + top_padding;
-  int name_height = kNameFontHeight * size_ratio_;
-  int author_y = name_y + name_height + middle_padding;
-  int author_height = kAuthorFontHeight * size_ratio_;
-  int text_x = info_rect.getX() + left_padding;
-  int text_width = info_rect.getWidth() - 2 * left_padding;
-  preset_text_->setTextSize(name_height);
-  preset_text_->setBounds(text_x, name_y - middle_padding, text_width, name_height + 2 * middle_padding);
-  author_text_->setTextSize(author_height);
-  author_text_->setBounds(text_x, author_y, text_width / 2, author_height + 2 * middle_padding);
-
-  int style_filter_y = search_rect.getY() + top_padding;
+  int folder_y = search_rect.getY() + top_padding;
   if (search_box_) {
     int search_box_height = kSearchBoxRowHeightRatio * preset_list_->getRowHeight();
-    int search_box_x = search_rect.getX() + left_padding;
-    search_box_->setBounds(search_box_x, search_rect.getY() + top_padding, text_width, search_box_height);
-
-    style_filter_y = search_box_->getBottom() + top_padding;
+    search_box_->setBounds(content_x, folder_y, content_width, search_box_height);
+    folder_y = search_box_->getBottom() + top_padding;
   }
 
-  int widget_margin = getWidgetMargin();
-  int style_button_height = preset_list_->getRowHeight();
-  int style_filter_x = search_rect.getX() + left_padding;
-  int style_filter_width = search_rect.getWidth() - 2 * left_padding + widget_margin;
-
-  int num_in_row = LoadSave::kNumPresetStyles / 3;
-  for (int i = 0; i < LoadSave::kNumPresetStyles; ++i) {
-    int column = i % num_in_row;
-    int x = style_filter_x + (style_filter_width * column) / num_in_row;
-    int next_x = style_filter_x + (style_filter_width * (column + 1)) / num_in_row;
-    int width = next_x - x - widget_margin;
-    int y = style_filter_y + (i / num_in_row) * (style_button_height + widget_margin);
-    style_buttons_[i]->setBounds(x, y, width, style_button_height);
-  }
-
-  int folder_y = style_filter_y + 3 * style_button_height + 2 * widget_margin + top_padding + 1;
-  folder_list_->setBounds(style_filter_x, folder_y, text_width, search_rect.getBottom() - top_padding - folder_y - 1);
-
-  setCommentsBounds();
+  folder_list_->setBounds(content_x, folder_y, content_width, search_rect.getBottom() - top_padding - folder_y);
+  preset_text_->setBounds(0, 0, 0, 0);
+  author_text_->setBounds(0, 0, 0, 0);
+  if (comments_)
+    comments_->setBounds(0, 0, 0, 0);
 }
 
 void PresetBrowser::setCommentsBounds() {
+  return;   // VialFX: no info panel
   Rectangle<int> info_rect = getInfoRect();
   int left_padding = kLeftPadding * size_ratio_;
   int top_padding = kTopPadding * size_ratio_;
@@ -835,17 +795,12 @@ void PresetBrowser::visibilityChanged() {
 }
 
 Rectangle<int> PresetBrowser::getSearchRect() {
-  Rectangle<int> info_rect = getInfoRect();
-  int padding = findValue(Skin::kLargePadding);
-  int y = info_rect.getBottom() + padding;
-  return Rectangle<int>(0, y, info_rect.getWidth(), getHeight() - y);
+  return Rectangle<int>(0, 0, getInfoRect().getWidth(), getHeight());
 }
 
 Rectangle<int> PresetBrowser::getInfoRect() {
-  static constexpr float kInfoHeightRatio = 0.43f;
   int width = preset_list_->getX() - findValue(Skin::kLargePadding);
-  int height = getHeight() * kInfoHeightRatio;
-  return Rectangle<int>(0, 0, width, height);
+  return Rectangle<int>(0, 0, width, 0);
 }
 
 void PresetBrowser::loadPresets() {

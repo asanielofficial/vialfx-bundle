@@ -31,6 +31,7 @@ FullInterface::FullInterface(SynthGuiData* synth_data) : SynthSection("full_inte
   header_ = std::make_unique<EffectHeader>();
   addSubSection(header_.get());
   header_->addListener(this);
+  header_->setAudioMemory(synth_data->synth->getAudioMemory());
 
   preset_browser_ = std::make_unique<PresetBrowser>();
   addSubSection(preset_browser_.get());
@@ -419,7 +420,11 @@ void FullInterface::dualPopupSelector(Component* source, Point<int> position, in
 void FullInterface::popupDisplay(Component* source, const std::string& text,
                                  BubbleComponent::BubblePlacement placement, bool primary) {
   PopupDisplay* display = primary ? popup_display_1_.get() : popup_display_2_.get();
-  display->setContent(text, getLocalArea(source, source->getLocalBounds()), placement);
+  Rectangle<int> source_bounds = getLocalArea(source, source->getLocalBounds());
+  // Controls in the lower half would have their value bubble clipped by the window edge: show it above instead.
+  if (placement == BubbleComponent::below && source_bounds.getCentreY() > getHeight() / 2)
+    placement = BubbleComponent::above;
+  display->setContent(text, source_bounds, placement);
   display->setVisible(true);
 }
 

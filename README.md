@@ -10,7 +10,7 @@ Each plugin is the same module you see on Vital's effects tab, running Vital's o
 - a settings page with **Oversampling** (1x to 8x) and Vital's **Display** options (Frequency Units: Semitones/Hz, and Skin)
 - Vial Filter only: **Keytrack**, following incoming MIDI notes
 
-Presets are stored in `Documents/VialFX/<Effect>/Presets`.
+Presets are saved as `.vialfx` files in `Documents/VialFX/Bundle/<Effect>/User/Presets` (sub-folders there show up as folders in the preset browser).
 
 ## Status
 

@@ -28,21 +28,21 @@ using json = nlohmann::json;
 
 class SaveSection : public Overlay, public TextEditor::Listener {
   public:
-    static constexpr int kSaveWidth = 630;
-    static constexpr int kSavePresetHeight = 450;
+    static constexpr int kSaveWidth = 440;
+    static constexpr int kSavePresetHeight = 150;
     static constexpr int kStylePaddingX = 4;
     static constexpr int kStylePaddingY = 4;
     static constexpr int kStyleButtonHeight = 24;
-    static constexpr int kOverwriteWidth = 340;
-    static constexpr int kOverwriteHeight = 160;
-    static constexpr int kTextEditorHeight = 37;
-    static constexpr int kLabelHeight = 15;
-    static constexpr int kButtonHeight = 40;
+    static constexpr int kOverwriteWidth = 300;
+    static constexpr int kOverwriteHeight = 120;
+    static constexpr int kTextEditorHeight = 28;
+    static constexpr int kLabelHeight = 12;
+    static constexpr int kButtonHeight = 28;
     static constexpr int kAddFolderHeight = 20;
-    static constexpr int kDivision = 150;
-    static constexpr int kPaddingX = 25;
-    static constexpr int kPaddingY = 20;
-    static constexpr int kExtraTopPadding = 10;
+    static constexpr int kDivision = 80;
+    static constexpr int kPaddingX = 18;
+    static constexpr int kPaddingY = 14;
+    static constexpr int kExtraTopPadding = 0;
 
     class Listener {
       public:

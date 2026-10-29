@@ -74,7 +74,6 @@ function(vitalfx_add_plugin)
   target_compile_definitions(${P_NAME} PRIVATE
     VITALFX_EFFECT=${P_EFFECT}
     NO_AUTH=1
-    NO_TEXT_ENTRY=0
     JUCE_OPENGL3=1
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0

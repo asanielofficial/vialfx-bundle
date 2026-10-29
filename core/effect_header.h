@@ -4,6 +4,7 @@
 #include "JuceHeader.h"
 
 #include "header_section.h"
+#include "oscilloscope.h"
 #include "preset_browser.h"
 #include "save_section.h"
 #include "synth_preset_selector.h"
@@ -33,6 +34,7 @@ class EffectHeader : public SynthSection, public SaveSection::Listener,
     void paintBackground(Graphics& g) override;
     void resized() override;
     void reset() override;
+    void setAudioMemory(const vital::StereoMemory* memory) { spectrogram_->setAudioMemory(memory); }
     void buttonClicked(Button* clicked_button) override;
 
     // SynthPresetSelector::Listener
@@ -63,6 +65,7 @@ class EffectHeader : public SynthSection, public SaveSection::Listener,
     std::unique_ptr<SynthPresetSelector> preset_selector_;
     std::unique_ptr<VolumeSection> volume_section_;
     std::unique_ptr<OpenGlShapeButton> settings_button_;
+    std::unique_ptr<Spectrogram> spectrogram_;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EffectHeader)
 };

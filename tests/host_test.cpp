@@ -19,6 +19,7 @@ int main(int argc, char** argv) {
   ScopedJuceInitialiser_GUI juce_init;
   if (argc < 2) { std::printf("usage: host_test plugin.vst3 [--editor]\n"); return 2; }
   const bool test_editor = argc > 2 && String(argv[2]) == "--editor";
+  const bool keytrack_test = argc > 2 && String(argv[2]) == "--keytrack";   // filter plugin: MIDI note -> cutoff
   const bool editor_only = argc > 2 && String(argv[2]) == "--editor-only";   // keep window up ~15 s for screenshots
 
   AudioPluginFormatManager formats;
@@ -67,6 +68,58 @@ int main(int argc, char** argv) {
     MessageManager::getInstance()->runDispatchLoopUntil(60000);
     editor->removeFromDesktop();
     return 0;
+  }
+
+  if (keytrack_test) {
+    AudioProcessorParameter *kt = nullptr, *cutoff = nullptr, *on = nullptr;
+    for (auto* p : params) {
+      String n = p->getName(64);
+      if (n.containsIgnoreCase("keytrack") || n.containsIgnoreCase("key track")) kt = p;
+      else if (n.containsIgnoreCase("cutoff") && !cutoff) cutoff = p;
+    }
+    CHECK(kt != nullptr, "filter exposes a keytrack parameter");
+    CHECK(cutoff != nullptr, "filter exposes a cutoff parameter");
+    if (!kt || !cutoff) return 1;
+    std::printf("      keytrack param '%s', cutoff param '%s'\n", kt->getName(64).toRawUTF8(), cutoff->getName(64).toRawUTF8());
+    const int block = 512;
+    plugin->setPlayConfigDetails(2, 2, 48000.0, block);
+    plugin->prepareToPlay(48000.0, block);
+    cutoff->setValue(0.5f);
+    for (auto* p : params) if (p->getName(64).containsIgnoreCase("mix") || p->getName(64).containsIgnoreCase("dry")) p->setValue(1.0f);
+
+    // Brightness of filtered noise (energy of the first difference over total energy) while holding `note`.
+    auto brightness = [&](int note, float keytrack_norm) {
+      kt->setValue(keytrack_norm);
+      plugin->reset();
+      Random rng(1234);
+      double diff = 0, total = 0;
+      for (int b = 0; b < 60; ++b) {
+        AudioBuffer<float> buf(2, block);
+        MidiBuffer midi;
+        if (b == 0 && note >= 0) midi.addEvent(MidiMessage::noteOn(1, note, (juce::uint8) 100), 0);
+        for (int c = 0; c < 2; ++c) for (int i = 0; i < block; ++i) buf.setSample(c, i, rng.nextFloat() * 0.5f - 0.25f);
+        plugin->processBlock(buf, midi);
+        if (b < 20) continue;
+        for (int i = 1; i < block; ++i) {
+          float x = buf.getSample(0, i), d = x - buf.getSample(0, i - 1);
+          total += x * x; diff += d * d;
+        }
+      }
+      return total > 0 ? diff / total : 0.0;
+    };
+    double off_low = brightness(36, 0.5f), off_high = brightness(96, 0.5f);   // 0.5 = keytrack 0.0
+    double on_low = brightness(36, 1.0f), on_high = brightness(96, 1.0f);     // 1.0 = keytrack +1.0
+    std::printf("      keytrack 0: note36=%.4f note96=%.4f | keytrack +1: note36=%.4f note96=%.4f\n", off_low, off_high, on_low, on_high);
+    std::printf("      keytrack +1, no note: %.4f; cutoff low/high (norm 0.2 / 0.8), keytrack 0: %.4f / %.4f\n",
+                brightness(-1, 1.0f), (cutoff->setValue(0.2f), brightness(-1, 0.5f)), (cutoff->setValue(0.8f), brightness(-1, 0.5f)));
+    cutoff->setValue(0.5f);
+    if (std::getenv("VFX_VERBOSE"))
+      for (int n : { 0, 24, 48, 60, 72, 96, 127 }) std::printf("      keytrack +1 note %3d: %.5f\n", n, brightness(n, 1.0f));
+    CHECK(std::abs(off_high - off_low) < 0.05 * std::max(off_high, off_low) + 1e-6, "keytrack 0: note does not change the filter");
+    CHECK(std::abs(on_high - on_low) > 0.2 * std::max(on_high, on_low), "keytrack +1: higher note opens/moves the filter");
+    CHECK(on_high != off_high, "keytrack setting changes the sound");
+    std::printf(failures ? "\n%d FAILURE(S)\n" : "\nALL CHECKS PASSED\n", failures);
+    return failures ? 1 : 0;
   }
 
   const int block = 512, blocks = 400;   // ~4.3 s at 48 kHz

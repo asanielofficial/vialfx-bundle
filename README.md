@@ -21,6 +21,23 @@ Presets are saved as `.vialfx` files in `Documents/VialFX/Bundle/<Effect>/User/P
 
 CLAP is built alongside VST3; pass `-DVITALFX_ENABLE_CLAP=OFF` to skip it.
 
+## Downloads
+
+Every push to `main` refreshes the **nightly** pre-release on the Releases page with the plain files (no extra zip layer):
+
+| File | What it is |
+|---|---|
+| `VialFX-Bundle-Setup-windows.exe` | Windows installer (pick plugins and formats) |
+| `VialFX-Bundle-Setup-macos.pkg` | macOS installer (pick plugins and formats) |
+| `VialFX-Bundle-linux.tar.gz` | Linux VST3 + CLAP (copy into `~/.vst3` and `~/.clap`) |
+| `VialFX-Bundle-windows.zip`, `VialFX-Bundle-macos.zip` | Manual-install archives |
+
+## Skins
+
+Skins use the `.vialskin` extension. In a plugin's settings (cog), **Sync skin to all VialFX plugins** publishes
+the current skin to `Documents/VialFX/Bundle/Shared/bundle.vialskin`; every open or newly opened Vial plugin
+picks it up (unless you later choose a different skin in that plugin).
+
 ## Building
 
 ```

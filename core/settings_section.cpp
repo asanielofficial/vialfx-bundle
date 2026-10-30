@@ -126,6 +126,13 @@ class SettingsSection::DisplayBox : public SynthSection {
       skin_->setLookAndFeel(TextLookAndFeel::instance());
       skin_->setStringLookup(short_skin_strings_.get());
       skin_->setLongStringLookup(long_skin_strings_.get());
+
+      sync_button_ = std::make_unique<OpenGlToggleButton>("");
+      sync_button_->addListener(this);
+      sync_button_->setLookAndFeel(TextLookAndFeel::instance());
+      sync_button_->setButtonText("Sync skin to all VialFX plugins");
+      addAndMakeVisible(sync_button_.get());
+      addOpenGlComponent(sync_button_->getGlComponent());
     }
 
     void paintBackgroundShadow(Graphics& g) override { paintTabShadow(g); }
@@ -145,10 +152,33 @@ class SettingsSection::DisplayBox : public SynthSection {
       const int width = getWidth() - 2 * margin;
       const int y = getTitleWidth() + margin;
       const int bottom = getHeight() - margin;
-      const int frequency_height = (bottom - y - margin) / 2;
-      frequency_display_->setBounds(margin, y, width, frequency_height);
-      const int skin_y = y + frequency_height + margin;
-      skin_->setBounds(margin, skin_y, width, bottom - skin_y);
+      const int row_height = (bottom - y - 2 * margin) / 3;
+      frequency_display_->setBounds(margin, y, width, row_height);
+      const int skin_y = y + row_height + margin;
+      skin_->setBounds(margin, skin_y, width, row_height);
+      const int sync_y = skin_y + row_height + margin;
+      sync_button_->setBounds(margin, sync_y, width, bottom - sync_y);
+    }
+
+    void buttonClicked(Button* clicked) override {
+      if (clicked != sync_button_.get()) {
+        SynthSection::buttonClicked(clicked);
+        return;
+      }
+      // Publish this plugin's current skin as the bundle skin; every open or newly opened VialFX plugin adopts it.
+      File own = LoadSave::getDefaultSkin();
+      if (!own.existsAsFile())
+        LoadSave::writeBuiltInDefaultSkin(own);
+      File bundle = LoadSave::getBundleSkin();
+      if (LoadSave::installSkinFile(own, bundle))
+        if (FullInterface* full = findParentComponentOfClass<FullInterface>())
+          full->markBundleSkinApplied();
+      sync_button_->setButtonText("Skin synced!");
+      sync_button_->setToggleState(false, dontSendNotification);
+      Timer::callAfterDelay(1500, [safe = Component::SafePointer<SynthSection>(this)]() {
+        if (safe != nullptr)
+          static_cast<DisplayBox*>(safe.getComponent())->sync_button_->setButtonText("Sync skin to all VialFX plugins");
+      });
     }
 
     void pushFrequencyDisplay() {
@@ -168,8 +198,9 @@ class SettingsSection::DisplayBox : public SynthSection {
       else if (changed == skin_.get()) {
         File default_skin = LoadSave::getDefaultSkin();
         if (skin_->getValue() == 0.0f) {
-          if (default_skin.exists() && default_skin.hasWriteAccess())
-            default_skin.deleteFile();
+          // Keep a file (rather than deleting it) so the choice is newer than any synced bundle skin.
+          LoadSave::saveLoadedSkin("");
+          LoadSave::writeBuiltInDefaultSkin(default_skin);
           Skin skin;
           skin.loadDefaultSkin();
           loadSkin(skin);
@@ -178,7 +209,7 @@ class SettingsSection::DisplayBox : public SynthSection {
           FileChooser open_box("Open Skin", File(), String("*.") + vital::kSkinExtension);
           if (open_box.browseForFileToOpen()) {
             File skin_file = open_box.getResult();
-            skin_file.copyFileTo(LoadSave::getDefaultSkin());
+            LoadSave::installSkinFile(skin_file, LoadSave::getDefaultSkin());
             Skin skin;
             skin.loadFromFile(skin_file);
             loadSkin(skin);
@@ -190,7 +221,7 @@ class SettingsSection::DisplayBox : public SynthSection {
           if (!skin_file.exists())
             return;
           LoadSave::saveLoadedSkin(skin_file.getFileNameWithoutExtension().toStdString());
-          skin_file.copyFileTo(default_skin);
+          LoadSave::installSkinFile(skin_file, default_skin);
           skin.loadFromFile(skin_file);
           loadSkin(skin);
         }
@@ -206,6 +237,7 @@ class SettingsSection::DisplayBox : public SynthSection {
 
     std::unique_ptr<TextSelector> frequency_display_;
     std::unique_ptr<TextSelector> skin_;
+    std::unique_ptr<OpenGlToggleButton> sync_button_;
     int skin_value_ = 0;
     Array<File> skins_;
     std::unique_ptr<std::string[]> short_skin_strings_;

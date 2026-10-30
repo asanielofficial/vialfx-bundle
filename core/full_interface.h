@@ -21,7 +21,7 @@ class SettingsSection;
 struct SynthGuiData;
 
 class FullInterface : public SynthSection, public EffectHeader::Listener,
-                      public OpenGLRenderer, DragAndDropContainer {
+                      public OpenGLRenderer, DragAndDropContainer, private Timer {
   public:
     static constexpr double kMinOpenGlVersion = 1.4;
     static constexpr int kTopHeight = 48;
@@ -39,6 +39,8 @@ class FullInterface : public SynthSection, public EffectHeader::Listener,
     void paintBackground(Graphics& g) override;
     void copySkinValues(const Skin& skin);
     void reloadSkin(const Skin& skin);
+    // Called after this plugin publishes its skin to the bundle, so it doesn't reload its own change.
+    void markBundleSkinApplied();
 
     void repaintChildBackground(SynthSection* child);
     void repaintOpenGlBackground(OpenGlComponent* component);
@@ -104,6 +106,8 @@ class FullInterface : public SynthSection, public EffectHeader::Listener,
     int getPixelMultiple() const override { return pixel_multiple_; }
 
   private:
+    void timerCallback() override;   // picks up skins synced from other VialFX plugins
+    Time bundle_skin_applied_;
     std::unique_ptr<EffectHeader> header_;
     std::unique_ptr<SynthSection> effect_section_;
     std::unique_ptr<SettingsSection> settings_section_;

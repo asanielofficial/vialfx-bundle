@@ -191,6 +191,11 @@ bool Skin::shouldScaleValue(ValueId value_id) {
 
 Skin::Skin() {
   File default_skin = LoadSave::getDefaultSkin();
+  // VialFX: a skin synced from another plugin in the bundle wins if it is newer than this plugin's own skin.
+  File bundle_skin = LoadSave::getBundleSkin();
+  if (bundle_skin.existsAsFile() &&
+      (!default_skin.exists() || bundle_skin.getLastModificationTime() > default_skin.getLastModificationTime()))
+    default_skin = bundle_skin;
   if (default_skin.exists()) {
     if (!loadFromFile(default_skin))
       loadDefaultSkin();
@@ -209,7 +214,7 @@ void Skin::clearSkin() {
 }
 
 void Skin::loadDefaultSkin() {
-  MemoryInputStream skin((const void*)BinaryData::default_vitalskin, BinaryData::default_vitalskinSize, false);
+  MemoryInputStream skin((const void*)BinaryData::default_vialskin, BinaryData::default_vialskinSize, false);
   std::string skin_string = skin.readEntireStreamAsString().toStdString();
 
   try {

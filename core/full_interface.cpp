@@ -19,6 +19,8 @@ FullInterface::FullInterface(SynthGuiData* synth_data) : SynthSection("full_inte
   Skin default_skin;
   setSkinValues(default_skin, true);
   default_skin.copyValuesToLookAndFeel(DefaultLookAndFeel::instance());
+  markBundleSkinApplied();
+  startTimer(1500);
 
   effect_section_ = vitalfx::createEffectSection(static_cast<vitalfx::EffectKind>(VITALFX_EFFECT),
                                                  synth_data->mono_modulations);
@@ -108,6 +110,7 @@ FullInterface::FullInterface(SynthGuiData* synth_data) : SynthSection("full_inte
 }
 
 FullInterface::~FullInterface() {
+  stopTimer();
   open_gl_context_.detach();
   open_gl_context_.setRenderer(nullptr);
 }
@@ -134,6 +137,26 @@ void FullInterface::copySkinValues(const Skin& skin) {
   ScopedLock open_gl_lock(open_gl_critical_section_);
   skin.copyValuesToLookAndFeel(DefaultLookAndFeel::instance());
   setSkinValues(skin, true);
+}
+
+void FullInterface::markBundleSkinApplied() {
+  bundle_skin_applied_ = LoadSave::getBundleSkin().getLastModificationTime();
+}
+
+void FullInterface::timerCallback() {
+  File bundle = LoadSave::getBundleSkin();
+  if (!bundle.existsAsFile())
+    return;
+  Time modified = bundle.getLastModificationTime();
+  if (modified <= bundle_skin_applied_)
+    return;
+  bundle_skin_applied_ = modified;
+  Skin skin;
+  if (skin.loadFromFile(bundle)) {
+    LoadSave::installSkinFile(bundle, LoadSave::getDefaultSkin());
+    LoadSave::saveLoadedSkin("");
+    reloadSkin(skin);
+  }
 }
 
 void FullInterface::reloadSkin(const Skin& skin) {

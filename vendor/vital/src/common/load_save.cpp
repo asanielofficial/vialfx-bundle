@@ -1194,10 +1194,35 @@ File LoadSave::getDefaultSkin() {
   config_options.folderName = String(ProjectInfo::projectName).toLowerCase();
 #endif
 
-  return config_options.getDefaultFile();
+  File skin_file = config_options.getDefaultFile();
+  // VialFX: the folder may not exist yet; without it a copied skin silently failed to save and the
+  // plugin reverted to the default skin on reload.
+  skin_file.getParentDirectory().createDirectory();
+  return skin_file;
 #else
   return File();
 #endif
+}
+
+File LoadSave::getBundleSkin() {
+  return File::getSpecialLocation(File::userDocumentsDirectory)
+      .getChildFile("VialFX").getChildFile("Bundle").getChildFile("Shared").getChildFile("bundle.vialskin");
+}
+
+bool LoadSave::installSkinFile(const File& source, const File& destination) {
+  destination.getParentDirectory().createDirectory();
+  if (source == destination)
+    return destination.setLastModificationTime(Time::getCurrentTime());
+  if (!source.copyFileTo(destination))
+    return false;
+  return destination.setLastModificationTime(Time::getCurrentTime());
+}
+
+void LoadSave::writeBuiltInDefaultSkin(const File& destination) {
+  destination.getParentDirectory().createDirectory();
+  MemoryInputStream skin((const void*)BinaryData::default_vialskin, BinaryData::default_vialskinSize, false);
+  destination.replaceWithText(skin.readEntireStreamAsString());
+  destination.setLastModificationTime(Time::getCurrentTime());
 }
 
 json LoadSave::getConfigJson() {

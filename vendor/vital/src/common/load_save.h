@@ -95,6 +95,11 @@ class LoadSave {
     static json getConfigJson();
     static File getFavoritesFile();
     static File getDefaultSkin();
+    // VialFX: skin shared by every plugin in the bundle, and a helper that copies a skin file into place
+    // (creating the folder and stamping the modification time, which Windows would otherwise preserve).
+    static File getBundleSkin();
+    static bool installSkinFile(const File& source, const File& destination);
+    static void writeBuiltInDefaultSkin(const File& destination);
     static json getFavoritesJson();
     static void addFavorite(const File& new_favorite);
     static void removeFavorite(const File& old_favorite);

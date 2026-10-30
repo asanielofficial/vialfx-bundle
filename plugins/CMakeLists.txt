@@ -31,7 +31,7 @@ file(GLOB VITAL_FONTS ${VITAL_DIR}/fonts/*.ttf ${VITAL_DIR}/fonts/*.otf)
 file(GLOB VITAL_ICONS ${VITAL_DIR}/icons/*.svg)
 file(GLOB VITAL_TUNINGS ${VITAL_DIR}/tunings/*.scl)
 juce_add_binary_data(vitalfx_resources
-  SOURCES ${VITAL_DIR}/default.vitalskin ${VITAL_FONTS} ${VITAL_ICONS} ${VITAL_TUNINGS})
+  SOURCES ${VITAL_DIR}/default.vialskin ${VITAL_FONTS} ${VITAL_ICONS} ${VITAL_TUNINGS})
 set_target_properties(vitalfx_resources PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # ---- Our own code --------------------------------------------------------------------------------

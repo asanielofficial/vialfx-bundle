@@ -106,6 +106,21 @@ void PopupDisplay::setContent(const std::string& text, Rectangle<int> bounds,
   int middle_x = bounds.getX() + bounds.getWidth() / 2;
   int middle_y = bounds.getY() + bounds.getHeight() / 2;
 
+  // VialFX: flip to the opposite side when the bubble would run off the window, then clamp what is left.
+  Component* parent = getParentComponent();
+  const int parent_width = parent ? parent->getWidth() : 0;
+  const int parent_height = parent ? parent->getHeight() : 0;
+  if (parent_width > 0 && parent_height > 0) {
+    if (placement == BubbleComponent::right && bounds.getRight() + width > parent_width)
+      placement = BubbleComponent::left;
+    else if (placement == BubbleComponent::left && bounds.getX() - width < 0)
+      placement = BubbleComponent::right;
+    else if (placement == BubbleComponent::below && bounds.getBottom() + height > parent_height)
+      placement = BubbleComponent::above;
+    else if (placement == BubbleComponent::above && bounds.getY() - height < 0)
+      placement = BubbleComponent::below;
+  }
+
   if (placement == BubbleComponent::above)
     setBounds(middle_x - width / 2, bounds.getY() - height, width, height);
   else if (placement == BubbleComponent::below)
@@ -114,6 +129,13 @@ void PopupDisplay::setContent(const std::string& text, Rectangle<int> bounds,
     setBounds(bounds.getX() - width, middle_y - height / 2, width, height);
   else if (placement == BubbleComponent::right)
     setBounds(bounds.getRight(), middle_y - height / 2, width, height);
+
+  if (parent_width > 0 && parent_height > 0) {
+    Rectangle<int> placed = getBounds();
+    int x = std::max(0, std::min(placed.getX(), parent_width - width));
+    int y = std::max(0, std::min(placed.getY(), parent_height - height));
+    setBounds(x, y, width, height);
+  }
 
   text_.setText(text);
   text_.setTextSize(height * 0.5f);

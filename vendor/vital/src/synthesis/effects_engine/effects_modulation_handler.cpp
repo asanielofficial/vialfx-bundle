@@ -41,7 +41,7 @@ namespace vital {
       pitch_wheel_mapping_(nullptr), stereo_(nullptr), note_percentage_(nullptr) {
 
     note_from_reference_ = new cr::Add();
-    midi_offset_output_ = registerOutput(note_from_reference_->output());
+    midi_offset_output_ = registerControlRateOutput(note_from_reference_->output(), true);
   }
 
   void EffectsModulationHandler::init() {

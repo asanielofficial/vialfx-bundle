@@ -53,7 +53,7 @@ namespace vital {
   const std::string kWavetableExtension = "vitaltable";
   const std::string kWavetableExtensionsList = "*." + vital::kWavetableExtension + ";*.wav;*.flac";
   const std::string kSampleExtensionsList = "*.wav;*.flac";
-  const std::string kSkinExtension = "vitalskin";
+  const std::string kSkinExtension = "vialskin";
   const std::string kLfoExtension = "vitallfo";
   const std::string kBankExtension = "vitalbank";
 

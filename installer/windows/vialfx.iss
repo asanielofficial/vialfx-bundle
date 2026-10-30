@@ -30,51 +30,44 @@ UninstallFilesDir={commonappdata}\VialFX\Uninstall
 UninstallDisplayName=VialFX-Bundle (Vital-based effects)
 
 [Types]
-Name: "full"; Description: "Full installation (all plugins, VST3 and CLAP)"
-Name: "custom"; Description: "Custom installation"; Flags: iscustom
+Name: "full"; Description: "Full installation (all nine plugins)"
+Name: "custom"; Description: "Custom installation (choose plugins)"; Flags: iscustom
 
 [Components]
-Name: "vst3"; Description: "VST3 plugins (C:\Program Files\Common Files\VST3)"; Types: full custom
-Name: "clap"; Description: "CLAP plugins (C:\Program Files\Common Files\CLAP)"; Types: full custom
-Name: "vst3\chorus"; Description: "Vial Chorus"; Types: full custom
-Name: "vst3\compressor"; Description: "Vial Compressor"; Types: full custom
-Name: "vst3\delay"; Description: "Vial Delay"; Types: full custom
-Name: "vst3\distortion"; Description: "Vial Distortion"; Types: full custom
-Name: "vst3\eq"; Description: "Vial EQ"; Types: full custom
-Name: "vst3\filter"; Description: "Vial Filter"; Types: full custom
-Name: "vst3\flanger"; Description: "Vial Flanger"; Types: full custom
-Name: "vst3\phaser"; Description: "Vial Phaser"; Types: full custom
-Name: "vst3\reverb"; Description: "Vial Reverb"; Types: full custom
-Name: "clap\chorus"; Description: "Vial Chorus"; Types: full custom
-Name: "clap\compressor"; Description: "Vial Compressor"; Types: full custom
-Name: "clap\delay"; Description: "Vial Delay"; Types: full custom
-Name: "clap\distortion"; Description: "Vial Distortion"; Types: full custom
-Name: "clap\eq"; Description: "Vial EQ"; Types: full custom
-Name: "clap\filter"; Description: "Vial Filter"; Types: full custom
-Name: "clap\flanger"; Description: "Vial Flanger"; Types: full custom
-Name: "clap\phaser"; Description: "Vial Phaser"; Types: full custom
-Name: "clap\reverb"; Description: "Vial Reverb"; Types: full custom
+Name: "chorus"; Description: "Vial Chorus"; Types: full custom
+Name: "compressor"; Description: "Vial Compressor"; Types: full custom
+Name: "delay"; Description: "Vial Delay"; Types: full custom
+Name: "distortion"; Description: "Vial Distortion"; Types: full custom
+Name: "eq"; Description: "Vial EQ"; Types: full custom
+Name: "filter"; Description: "Vial Filter"; Types: full custom
+Name: "flanger"; Description: "Vial Flanger"; Types: full custom
+Name: "phaser"; Description: "Vial Phaser"; Types: full custom
+Name: "reverb"; Description: "Vial Reverb"; Types: full custom
+
+[Tasks]
+Name: "vst3"; Description: "Install VST3 versions (C:\Program Files\Common Files\VST3)"; GroupDescription: "Plugin formats:"
+Name: "clap"; Description: "Install CLAP versions (C:\Program Files\Common Files\CLAP)"; GroupDescription: "Plugin formats:"
 
 [Files]
 Source: "{#SourceDir}\LICENSE"; DestDir: "{commonappdata}\VialFX"; Flags: ignoreversion
-Source: "{#SourceDir}\VST3\Vial Chorus.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Chorus.vst3"; Components: vst3\chorus; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#SourceDir}\VST3\Vial Compressor.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Compressor.vst3"; Components: vst3\compressor; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#SourceDir}\VST3\Vial Delay.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Delay.vst3"; Components: vst3\delay; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#SourceDir}\VST3\Vial Distortion.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Distortion.vst3"; Components: vst3\distortion; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#SourceDir}\VST3\Vial EQ.vst3\*"; DestDir: "{commoncf64}\VST3\Vial EQ.vst3"; Components: vst3\eq; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#SourceDir}\VST3\Vial Filter.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Filter.vst3"; Components: vst3\filter; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#SourceDir}\VST3\Vial Flanger.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Flanger.vst3"; Components: vst3\flanger; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#SourceDir}\VST3\Vial Phaser.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Phaser.vst3"; Components: vst3\phaser; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#SourceDir}\VST3\Vial Reverb.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Reverb.vst3"; Components: vst3\reverb; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#SourceDir}\CLAP\Vial Chorus.clap"; DestDir: "{commoncf64}\CLAP"; Components: clap\chorus; Flags: ignoreversion
-Source: "{#SourceDir}\CLAP\Vial Compressor.clap"; DestDir: "{commoncf64}\CLAP"; Components: clap\compressor; Flags: ignoreversion
-Source: "{#SourceDir}\CLAP\Vial Delay.clap"; DestDir: "{commoncf64}\CLAP"; Components: clap\delay; Flags: ignoreversion
-Source: "{#SourceDir}\CLAP\Vial Distortion.clap"; DestDir: "{commoncf64}\CLAP"; Components: clap\distortion; Flags: ignoreversion
-Source: "{#SourceDir}\CLAP\Vial EQ.clap"; DestDir: "{commoncf64}\CLAP"; Components: clap\eq; Flags: ignoreversion
-Source: "{#SourceDir}\CLAP\Vial Filter.clap"; DestDir: "{commoncf64}\CLAP"; Components: clap\filter; Flags: ignoreversion
-Source: "{#SourceDir}\CLAP\Vial Flanger.clap"; DestDir: "{commoncf64}\CLAP"; Components: clap\flanger; Flags: ignoreversion
-Source: "{#SourceDir}\CLAP\Vial Phaser.clap"; DestDir: "{commoncf64}\CLAP"; Components: clap\phaser; Flags: ignoreversion
-Source: "{#SourceDir}\CLAP\Vial Reverb.clap"; DestDir: "{commoncf64}\CLAP"; Components: clap\reverb; Flags: ignoreversion
+Source: "{#SourceDir}\VST3\Vial Chorus.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Chorus.vst3"; Components: chorus; Tasks: vst3; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\VST3\Vial Compressor.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Compressor.vst3"; Components: compressor; Tasks: vst3; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\VST3\Vial Delay.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Delay.vst3"; Components: delay; Tasks: vst3; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\VST3\Vial Distortion.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Distortion.vst3"; Components: distortion; Tasks: vst3; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\VST3\Vial EQ.vst3\*"; DestDir: "{commoncf64}\VST3\Vial EQ.vst3"; Components: eq; Tasks: vst3; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\VST3\Vial Filter.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Filter.vst3"; Components: filter; Tasks: vst3; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\VST3\Vial Flanger.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Flanger.vst3"; Components: flanger; Tasks: vst3; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\VST3\Vial Phaser.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Phaser.vst3"; Components: phaser; Tasks: vst3; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\VST3\Vial Reverb.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Reverb.vst3"; Components: reverb; Tasks: vst3; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\CLAP\Vial Chorus.clap"; DestDir: "{commoncf64}\CLAP"; Components: chorus; Tasks: clap; Flags: ignoreversion
+Source: "{#SourceDir}\CLAP\Vial Compressor.clap"; DestDir: "{commoncf64}\CLAP"; Components: compressor; Tasks: clap; Flags: ignoreversion
+Source: "{#SourceDir}\CLAP\Vial Delay.clap"; DestDir: "{commoncf64}\CLAP"; Components: delay; Tasks: clap; Flags: ignoreversion
+Source: "{#SourceDir}\CLAP\Vial Distortion.clap"; DestDir: "{commoncf64}\CLAP"; Components: distortion; Tasks: clap; Flags: ignoreversion
+Source: "{#SourceDir}\CLAP\Vial EQ.clap"; DestDir: "{commoncf64}\CLAP"; Components: eq; Tasks: clap; Flags: ignoreversion
+Source: "{#SourceDir}\CLAP\Vial Filter.clap"; DestDir: "{commoncf64}\CLAP"; Components: filter; Tasks: clap; Flags: ignoreversion
+Source: "{#SourceDir}\CLAP\Vial Flanger.clap"; DestDir: "{commoncf64}\CLAP"; Components: flanger; Tasks: clap; Flags: ignoreversion
+Source: "{#SourceDir}\CLAP\Vial Phaser.clap"; DestDir: "{commoncf64}\CLAP"; Components: phaser; Tasks: clap; Flags: ignoreversion
+Source: "{#SourceDir}\CLAP\Vial Reverb.clap"; DestDir: "{commoncf64}\CLAP"; Components: reverb; Tasks: clap; Flags: ignoreversion
 
 [Messages]
 FinishedLabel=VialFX-Bundle is installed. Rescan plugins in your DAW to see the Vial effects.

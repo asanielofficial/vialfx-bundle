@@ -130,7 +130,7 @@ class SettingsSection::DisplayBox : public SynthSection {
       sync_button_ = std::make_unique<OpenGlToggleButton>("");
       sync_button_->addListener(this);
       sync_button_->setLookAndFeel(TextLookAndFeel::instance());
-      sync_button_->setButtonText("Sync skin to all VialFX plugins");
+      sync_button_->setButtonText("Sync all");
       addAndMakeVisible(sync_button_.get());
       addOpenGlComponent(sync_button_->getGlComponent());
     }
@@ -152,12 +152,13 @@ class SettingsSection::DisplayBox : public SynthSection {
       const int width = getWidth() - 2 * margin;
       const int y = getTitleWidth() + margin;
       const int bottom = getHeight() - margin;
-      const int row_height = (bottom - y - 2 * margin) / 3;
-      frequency_display_->setBounds(margin, y, width, row_height);
-      const int skin_y = y + row_height + margin;
-      skin_->setBounds(margin, skin_y, width, row_height);
-      const int sync_y = skin_y + row_height + margin;
-      sync_button_->setBounds(margin, sync_y, width, bottom - sync_y);
+      const int frequency_height = (bottom - y - margin) / 2;
+      frequency_display_->setBounds(margin, y, width, frequency_height);
+      // Skin selector and the "Sync all" button share the second row.
+      const int skin_y = y + frequency_height + margin;
+      const int sync_width = width * 2 / 5;
+      skin_->setBounds(margin, skin_y, width - sync_width - margin, bottom - skin_y);
+      sync_button_->setBounds(skin_->getRight() + margin, skin_y, sync_width, bottom - skin_y);
     }
 
     void buttonClicked(Button* clicked) override {
@@ -173,11 +174,11 @@ class SettingsSection::DisplayBox : public SynthSection {
       if (LoadSave::installSkinFile(own, bundle))
         if (FullInterface* full = findParentComponentOfClass<FullInterface>())
           full->markBundleSkinApplied();
-      sync_button_->setButtonText("Skin synced!");
+      sync_button_->setButtonText("Synced!");
       sync_button_->setToggleState(false, dontSendNotification);
       Timer::callAfterDelay(1500, [safe = Component::SafePointer<SynthSection>(this)]() {
         if (safe != nullptr)
-          static_cast<DisplayBox*>(safe.getComponent())->sync_button_->setButtonText("Sync skin to all VialFX plugins");
+          static_cast<DisplayBox*>(safe.getComponent())->sync_button_->setButtonText("Sync all");
       });
     }
 

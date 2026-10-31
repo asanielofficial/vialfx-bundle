@@ -995,10 +995,13 @@ void SinglePopupSelector::setPosition(Point<int> position, Rectangle<int> bounds
   int height = popup_list_->getBrowseHeight() + 2 * rounding;
   int x = position.x;
   int y = position.y;
+  // VialFX: keep the whole popup inside the window (flipping left can otherwise push it off the left edge).
+  width = std::min(width, bounds.getWidth());
+  height = std::min(height, bounds.getHeight());
   if (x + width > bounds.getRight())
     x -= width;
-  if (y + height > bounds.getBottom())
-    y = bounds.getBottom() - height;
+  x = std::max(bounds.getX(), std::min(x, bounds.getRight() - width));
+  y = std::max(bounds.getY(), std::min(y, bounds.getBottom() - height));
   setBounds(x, y, width, height);
 }
 
@@ -1059,10 +1062,13 @@ void DualPopupSelector::setPosition(Point<int> position, int width, Rectangle<in
   int height = left_list_->getBrowseHeight() + 2 * rounding;
   int x = position.x;
   int y = position.y;
+  // VialFX: keep the whole popup inside the window (flipping left can otherwise push it off the left edge).
+  width = std::min(width, bounds.getWidth());
+  height = std::min(height, bounds.getHeight());
   if (x + width > bounds.getRight())
     x -= width;
-  if (y + height > bounds.getBottom())
-    y = bounds.getBottom() - height;
+  x = std::max(bounds.getX(), std::min(x, bounds.getRight() - width));
+  y = std::max(bounds.getY(), std::min(y, bounds.getBottom() - height));
   setBounds(x, y, width, height);
 }
 

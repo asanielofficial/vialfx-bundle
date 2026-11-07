@@ -158,7 +158,7 @@ void EffectPlugin::processBlock(AudioBuffer<float>& buffer, MidiBuffer& midi_mes
 
   processModulationChanges();
 
-  const bool use_midi = vitalfx::thisEffect().is_filter && settings_.keytrack_from_midi;
+  const bool use_midi = vitalfx::thisEffect().uses_keytrack && settings_.keytrack_from_midi;
   if (use_midi)
     processKeyboardEvents(midi_messages, total_samples);
 

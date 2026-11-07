@@ -49,6 +49,7 @@ namespace {
     "Reverb",
     "Pitch Shifter",
     "Utility",
+    "Freq Shifter",
     "Modulation Drag Drop",
     "Modulation Matrix",
     "Preset Browser",

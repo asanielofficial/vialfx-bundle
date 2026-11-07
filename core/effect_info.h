@@ -8,7 +8,7 @@
 
 namespace vitalfx {
 
-enum class EffectKind { kChorus, kCompressor, kDelay, kDistortion, kEq, kFilter, kFlanger, kPhaser, kReverb, kPitchShifter, kUtility };
+enum class EffectKind { kChorus, kCompressor, kDelay, kDistortion, kEq, kFilter, kFlanger, kPhaser, kReverb, kPitchShifter, kUtility, kFreqShifter };
 
 struct EffectInfo {
   EffectKind kind;
@@ -17,7 +17,7 @@ struct EffectInfo {
   const char* control_prefix;   // prefix of Vital control names that belong to this effect
   const char* on_control;       // Vital's per-effect power control
   const char* preset_folder;    // folder name under the user's VialFX preset directory
-  bool is_filter;               // filter plugin gets the keytrack setting and a MIDI input
+  bool uses_keytrack;           // gets the keytrack setting and a MIDI input (filter, freq shifter)
 };
 
 inline const EffectInfo& getEffectInfo(EffectKind kind) {
@@ -33,6 +33,7 @@ inline const EffectInfo& getEffectInfo(EffectKind kind) {
     { EffectKind::kReverb,     "Reverb",     "REVERB",     "reverb_",     "reverb_on",     "Reverb",     false },
     { EffectKind::kPitchShifter, "Pitch Shifter", "PITCH SHIFTER", "pitch_shifter_", "pitch_shifter_on", "Pitch Shifter", false },
     { EffectKind::kUtility,    "Utility",    "UTILITY",    "utility_",    "utility_on",    "Utility",    false },
+    { EffectKind::kFreqShifter, "Freq Shifter", "FREQ SHIFTER", "freq_shifter_", "freq_shifter_on", "Freq Shifter", true },
   };
   return kInfos[static_cast<int>(kind)];
 }

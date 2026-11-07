@@ -49,6 +49,12 @@ jobs:
             build/vialfx_host_test_artefacts/Release/vialfx_host_test \
             "build/plugins/Utility_artefacts/Release/VST3/Vial Utility.vst3" --utility
 
+      - name: Freq Shifter checks (shift, sideband, feedback)
+        run: |
+          xvfb-run -a -s "-screen 0 1280x800x24 +extension GLX" \
+            build/vialfx_host_test_artefacts/Release/vialfx_host_test \
+            "build/plugins/FreqShifter_artefacts/Release/VST3/Vial Freq Shifter.vst3" --shifter
+
       - name: Collect bundle
         run: |
           mkdir -p VialFX-Bundle/VST3 VialFX-Bundle/CLAP

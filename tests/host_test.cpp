@@ -3,6 +3,7 @@
 // checks bypass and state round-trips. Usage: host_test <path-to.vst3> [--editor]
 #include <JuceHeader.h>
 #include <cmath>
+#include <complex>
 #include <cstdio>
 #include <vector>
 
@@ -23,6 +24,7 @@ int main(int argc, char** argv) {
   const bool keytrack_test = argc > 2 && String(argv[2]) == "--keytrack";   // filter plugin: MIDI note -> cutoff
   const bool pitch_test = argc > 2 && String(argv[2]) == "--pitch";   // pitch shifter: measured pitch per mode
   const bool utility_test = argc > 2 && String(argv[2]) == "--utility";   // utility: gain/pan/invert/swap/width/haas/mono bass
+  const bool shifter_test = argc > 2 && String(argv[2]) == "--shifter";   // freq shifter: sideband, units, stereo, feedback
   const bool editor_only = argc > 2 && String(argv[2]) == "--editor-only";   // keep window up ~15 s for screenshots
 
   AudioPluginFormatManager formats;
@@ -265,8 +267,8 @@ int main(int argc, char** argv) {
 
     P[kBass]->setValue(1.0f);
     Out mb = play(40, 40, 0.4f, -0.4f);   // out-of-phase bass below the crossover must cancel
-    Out mh = play(5000, 5000, 0.4f, -0.4f);   // highs above it are left alone
-    std::printf("      mono bass @120 Hz: 40 Hz anti-phase -> L rms %.4f; 5 kHz anti-phase -> L rms %.4f (neutral %.4f)\n",
+    Out mh = play(600, 600, 0.4f, -0.4f);   // highs above the 120 Hz crossover are left alone
+    std::printf("      mono bass @120 Hz: 40 Hz anti-phase -> L rms %.4f; 600 Hz anti-phase -> L rms %.4f (neutral %.4f)\n",
                 rms(mb.l), rms(mh.l), 0.4 * kVol / 1.4142);
     CHECK(rms(mb.l) < 0.15 * 0.4 * kVol / 1.4142, "mono bass cancels out-of-phase lows");
     CHECK(rms(mh.l) > 0.9 * 0.4 * kVol / 1.4142, "mono bass leaves the highs alone");
@@ -278,6 +280,92 @@ int main(int argc, char** argv) {
     std::printf("      DC filter: mean after settling %.5f (input 0.3)\n", mean);
     CHECK(std::abs(mean) < 0.01, "DC filter removes a constant offset");
     for (int i = 0; i < 200; ++i) { AudioBuffer<float> b(2, block); MidiBuffer m; plugin->processBlock(b, m); }
+    std::printf(failures ? "\n%d FAILURE(S)\n" : "\nALL CHECKS PASSED\n", failures);
+    return failures ? 1 : 0;
+  }
+
+  if (shifter_test) {
+    auto find = [&](const char* name) -> AudioProcessorParameter* {
+      for (auto* p : params) if (p->getName(64).equalsIgnoreCase(name)) return p;
+      return nullptr;
+    };
+    auto *shift = find("Freq Shifter Shift"), *unit = find("Freq Shifter Unit"), *range = find("Freq Shifter Range"),
+         *period = find("Freq Shifter Range (Seconds)"), *stereo = find("Freq Shifter Stereo"),
+         *feedback = find("Freq Shifter Feedback"), *fbdir = find("Freq Shifter Feedback Direction"),
+         *mix = find("Freq Shifter Mix");
+    CHECK(shift && unit && range && period && stereo && feedback && fbdir && mix, "freq shifter parameters found");
+    if (!(shift && unit && range && period && stereo && feedback && fbdir && mix)) return 1;
+    const int block = 512;
+    plugin->setPlayConfigDetails(2, 2, 48000.0, block);
+    plugin->prepareToPlay(48000.0, block);
+    const double kVol = 0.5012;
+    auto reset = [&]() {
+      mix->setValue(1.0f); shift->setValue(0.5f); unit->setValue(0.0f); stereo->setValue(0.5f);
+      feedback->setValue(0.0f); fbdir->setValue(0.5f);
+      range->setValue((float) (std::log2(400.0) / 13.0));
+    };
+    struct Out { std::vector<float> l, r; };
+    auto play = [&](double freq) {
+      plugin->reset();
+      Out out; MidiBuffer midi; AudioBuffer<float> buf(2, block);
+      double ph = 0;
+      for (int b = 0; b < 140; ++b) {
+        for (int i = 0; i < block; ++i) {
+          float v = 0.4f * (float) std::sin(ph); ph += 2 * MathConstants<double>::pi * freq / 48000.0;
+          buf.setSample(0, i, v); buf.setSample(1, i, v);
+        }
+        plugin->processBlock(buf, midi);
+        if (b >= 100) for (int i = 0; i < block; ++i) { out.l.push_back(buf.getSample(0, i)); out.r.push_back(buf.getSample(1, i)); }
+      }
+      return out;
+    };
+    auto amp = [](const std::vector<float>& v, double f) {   // single-bin DFT amplitude (Hann)
+      std::complex<double> a = 0; double w = 0; const int n = (int) v.size();
+      for (int i = 0; i < n; ++i) {
+        double h = 0.5 - 0.5 * std::cos(2 * MathConstants<double>::pi * i / n);
+        a += h * v[i] * std::polar(1.0, -2 * MathConstants<double>::pi * f * i / 48000.0); w += h;
+      }
+      return 2.0 * std::abs(a) / w;
+    };
+    const double in_amp = 0.4 * kVol;
+
+    reset(); shift->setValue(0.5f);   // 0 shift
+    Out n0 = play(1000);
+    std::printf("      neutral: 1 kHz amplitude %.4f (expect %.4f)\n", amp(n0.l, 1000), in_amp);
+    CHECK(std::abs(amp(n0.l, 1000) / in_amp - 1.0) < 0.05, "shift 0 passes the signal through");
+
+    reset(); shift->setValue(0.75f);   // +50% of a 400 Hz range = +200 Hz
+    Out up = play(1000);
+    std::printf("      +200 Hz: 1200 Hz %.4f, 800 Hz (image) %.4f, 1000 Hz %.4f\n", amp(up.l, 1200), amp(up.l, 800), amp(up.l, 1000));
+    CHECK(amp(up.l, 1200) > 0.9 * in_amp && amp(up.l, 800) < 0.03 * in_amp && amp(up.l, 1000) < 0.03 * in_amp,
+          "positive shift moves 1 kHz to 1.2 kHz, no mirror image");
+
+    reset(); shift->setValue(0.25f);   // -200 Hz
+    Out down = play(1000);
+    std::printf("      -200 Hz: 800 Hz %.4f, 1200 Hz (image) %.4f\n", amp(down.l, 800), amp(down.l, 1200));
+    CHECK(amp(down.l, 800) > 0.9 * in_amp && amp(down.l, 1200) < 0.03 * in_amp, "negative shift moves 1 kHz to 800 Hz");
+
+    reset(); unit->setValue(0.2f); period->setValue((float) ((std::log2(0.005) + 13.0) / 13.0)); shift->setValue(1.0f);   // +100% of 1/5ms = 200 Hz
+    Out sec = play(1000);
+    std::printf("      Seconds unit, 5 ms range, +100%%: 1200 Hz %.4f\n", amp(sec.l, 1200));
+    CHECK(amp(sec.l, 1200) > 0.9 * in_amp, "Seconds unit: a 5 ms range shifts by 200 Hz");
+
+    reset(); shift->setValue(0.5f); stereo->setValue(1.0f);   // +-100 Hz between channels (25% of 400 Hz)
+    Out st = play(1000);
+    std::printf("      stereo +100%%: L 1100 Hz %.4f, R 900 Hz %.4f\n", amp(st.l, 1100), amp(st.r, 900));
+    CHECK(amp(st.l, 1100) > 0.9 * in_amp && amp(st.r, 900) > 0.9 * in_amp, "stereo offset shifts the channels in opposite directions");
+
+    reset(); feedback->setValue(1.0f);
+    Out fb = play(1000);
+    double peak = 0; for (float x : fb.l) peak = std::max(peak, (double) std::fabs(x));
+    std::printf("      feedback 100%%: peak %.3f\n", peak);
+    CHECK(std::isfinite(peak) && peak < 2.0, "full feedback stays bounded");
+    reset(); feedback->setValue(0.6f); fbdir->setValue(1.0f);
+    Out fd = play(1000);
+    peak = 0; for (float x : fd.l) peak = std::max(peak, (double) std::fabs(x));
+    std::printf("      feedback 60%% with direction +100%%: peak %.3f\n", peak);
+    CHECK(std::isfinite(peak) && peak < 2.0, "feedback direction stays bounded");
+
     std::printf(failures ? "\n%d FAILURE(S)\n" : "\nALL CHECKS PASSED\n", failures);
     return failures ? 1 : 0;
   }

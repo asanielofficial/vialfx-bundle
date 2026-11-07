@@ -158,6 +158,30 @@ namespace vital {
       ValueDetails::kExponential, false, " Hz", "Reverb Chorus Frequency", nullptr },
     { "reverb_on", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
       ValueDetails::kIndexed, false, "", "Reverb Switch", strings::kOffOnNames },
+    { "freq_shifter_on", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Freq Shifter Switch", strings::kOffOnNames },
+    { "freq_shifter_shift", 0x000000, -1.0, 1.0, 0.0, 0.0, 100.0,
+      ValueDetails::kLinear, false, "%", "Freq Shifter Shift", nullptr },
+    { "freq_shifter_unit", 0x000000, 0.0, 5.0, 0.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Freq Shifter Unit", strings::kFreqShifterUnitNames },
+    { "freq_shifter_frequency", 0x000000, 0.0, 13.0, 7.643856, 0.0, 1.0,
+      ValueDetails::kExponential, false, " Hz", "Freq Shifter Range", nullptr },
+    { "freq_shifter_period", 0x000000, -13.0, 0.0, -7.643856, 0.0, 1.0,
+      ValueDetails::kExponential, false, " secs", "Freq Shifter Range (Seconds)", nullptr },
+    { "freq_shifter_tempo", 0x000000, 0.0, 10.0, 4.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Freq Shifter Range (Tempo)", strings::kSyncedFrequencyNames },
+    { "freq_shifter_keytrack_transpose", 0x000000, -60.0, 36.0, -12.0, 0.0, 1.0,
+      ValueDetails::kLinear, false, " st", "Freq Shifter Range (Keytrack)", nullptr },
+    { "freq_shifter_stereo", 0x000000, -1.0, 1.0, 0.0, 0.0, 100.0,
+      ValueDetails::kLinear, false, "%", "Freq Shifter Stereo", nullptr },
+    { "freq_shifter_allpass", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Freq Shifter All-pass", strings::kOffOnNames },
+    { "freq_shifter_feedback", 0x000000, 0.0, 1.0, 0.3, 0.0, 100.0,
+      ValueDetails::kLinear, false, "%", "Freq Shifter Feedback", nullptr },
+    { "freq_shifter_fb_direction", 0x000000, -1.0, 1.0, 0.0, 0.0, 100.0,
+      ValueDetails::kLinear, false, "%", "Freq Shifter Feedback Direction", nullptr },
+    { "freq_shifter_dry_wet", 0x000000, 0.0, 1.0, 0.5, 0.0, 100.0,
+      ValueDetails::kLinear, false, "%", "Freq Shifter Mix", nullptr },
     { "utility_on", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
       ValueDetails::kIndexed, false, "", "Utility Switch", strings::kOffOnNames },
     { "utility_gain", 0x000000, -30.0, 30.0, 0.0, 0.0, 1.0,
@@ -628,7 +652,7 @@ namespace vital {
     // VialFX: the one effect in this plugin is on by default (so "Init Preset" keeps it running).
     {
       static const char* const kVialFxOn[] = { "chorus_on", "compressor_on", "delay_on", "distortion_on", "eq_on",
-                                               "filter_fx_on", "flanger_on", "phaser_on", "reverb_on", "pitch_shifter_on", "utility_on" };
+                                               "filter_fx_on", "flanger_on", "phaser_on", "reverb_on", "pitch_shifter_on", "utility_on", "freq_shifter_on" };
       details_lookup_[kVialFxOn[VITALFX_EFFECT]].default_value = 1.0f;
     }
 #endif

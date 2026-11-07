@@ -49,6 +49,7 @@ namespace vital {
       struct Biquad {
         float b0 = 1, b1 = 0, b2 = 0, a1 = 0, a2 = 0, z1 = 0, z2 = 0;
         void setLowpass(float freq, float sample_rate);
+        void setHighpass(float freq, float sample_rate);
         float tick(float x) {
           float y = b0 * x + z1;
           z1 = b1 * x - a1 * y + z2;
@@ -59,7 +60,8 @@ namespace vital {
       };
 
       float dc_x_[2], dc_y_[2];
-      Biquad low_[2][2];     // [channel][stage]: two Butterworth sections = 24 dB/oct low band
+      Biquad low_[2][2];     // [channel][stage]: two Butterworth sections = Linkwitz-Riley 24 dB/oct low band
+      Biquad high_[2][2];    // matching high band (low + high is an all-pass, so mono-ing the lows does not comb)
       float last_frequency_;
       float haas_buffer_[2][kHaasBufferSize];
       int haas_pos_;

@@ -304,7 +304,7 @@ SettingsSection::SettingsSection() : SynthSection("settings") {
   display_ = std::make_unique<DisplayBox>();
   addSubSection(display_.get());
 
-  if (vitalfx::thisEffect().is_filter) {
+  if (vitalfx::thisEffect().uses_keytrack) {
     keytrack_ = std::make_unique<KeytrackBox>();
     addSubSection(keytrack_.get());
   }

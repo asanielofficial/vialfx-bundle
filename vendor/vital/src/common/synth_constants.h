@@ -109,6 +109,7 @@ namespace vital {
       kReverb,
       kPitchShifter,
       kUtility,
+      kFreqShifter,
       kNumEffects
     };
 

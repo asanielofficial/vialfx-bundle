@@ -23,6 +23,17 @@ namespace vital {
     a2 = (1.0f - alpha) / a0;
   }
 
+  void Utility::Biquad::setHighpass(float freq, float sample_rate) {
+    float w0 = kUtilTwoPi * utilClamp(freq, 10.0f, sample_rate * 0.45f) / sample_rate;
+    float c = std::cos(w0), alpha = std::sin(w0) / (2.0f * 0.70710678f);
+    float a0 = 1.0f + alpha;
+    b0 = (1.0f + c) * 0.5f / a0;
+    b1 = -(1.0f + c) / a0;
+    b2 = b0;
+    a1 = -2.0f * c / a0;
+    a2 = (1.0f - alpha) / a0;
+  }
+
   Utility::Utility() : Processor(kNumInputs, kNumOutputs), last_frequency_(-1.0f), haas_pos_(0),
                        gain_(1.0f), pan_(0.0f), spread_(1.0f), haas_(0.0f), bass_amount_(0.0f) {
     hardReset();
@@ -37,6 +48,8 @@ namespace vital {
     for (int c = 0; c < 2; ++c) {
       dc_x_[c] = dc_y_[c] = 0.0f;
       for (auto& stage : low_[c])
+        stage.reset();
+      for (auto& stage : high_[c])
         stage.reset();
     }
     std::memset(haas_buffer_, 0, sizeof(haas_buffer_));
@@ -60,13 +73,17 @@ namespace vital {
     const bool swap = input(kSwap)->at(0)[0] >= 0.5f;
     const bool dc_filter = input(kDcFilter)->at(0)[0] >= 0.5f;
     const bool mono_bass = input(kMonoBass)->at(0)[0] >= 0.5f;
-    const float frequency = utilClamp(std::pow(2.0f, input(kMonoFrequency)->at(0)[0]), 20.0f, 1000.0f);
+    const float frequency = utilClamp(input(kMonoFrequency)->at(0)[0], 20.0f, 1000.0f);   // exponential controls already deliver Hz
 
     if (std::fabs(frequency - last_frequency_) > 1.0e-3f) {
       last_frequency_ = frequency;
       for (int c = 0; c < 2; ++c)
+      {
         for (auto& stage : low_[c])
           stage.setLowpass(frequency, sample_rate);
+        for (auto& stage : high_[c])
+          stage.setHighpass(frequency, sample_rate);
+      }
     }
 
     const float smooth = 1.0f - std::exp(-1.0f / (0.01f * sample_rate));
@@ -100,14 +117,16 @@ namespace vital {
         }
       }
 
-      // Mono bass: everything below the frequency is summed, the rest is left as is.
-      float low[2];
-      for (int c = 0; c < 2; ++c)
+      // Mono bass: split with a Linkwitz-Riley pair, sum only the low band to mono, then recombine.
+      float low[2], high[2];
+      for (int c = 0; c < 2; ++c) {
         low[c] = low_[c][1].tick(low_[c][0].tick(x[c]));
+        high[c] = high_[c][1].tick(high_[c][0].tick(x[c]));
+      }
       if (bass_amount_ > 1.0e-4f || mono_bass) {
         float mono_low = 0.5f * (low[0] + low[1]);
         for (int c = 0; c < 2; ++c)
-          x[c] += bass_amount_ * (mono_low - low[c]);
+          x[c] += bass_amount_ * ((high[c] + mono_low) - x[c]);
       }
 
       // Width on mid/side.

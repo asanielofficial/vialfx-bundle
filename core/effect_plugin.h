@@ -35,7 +35,7 @@ class EffectPlugin : public SynthBase, public AudioProcessor, public ValueBridge
     AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override { return true; }
 
-    bool acceptsMidi() const override { return vitalfx::thisEffect().is_filter; }
+    bool acceptsMidi() const override { return vitalfx::thisEffect().uses_keytrack; }
     bool producesMidi() const override { return false; }
     bool supportsMPE() const override { return false; }
     double getTailLengthSeconds() const override;

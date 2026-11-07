@@ -30,7 +30,7 @@ UninstallFilesDir={commonappdata}\VialFX\Uninstall
 UninstallDisplayName=VialFX-Bundle (Vital-based effects)
 
 [Types]
-Name: "full"; Description: "Full installation (all nine plugins)"
+Name: "full"; Description: "Full installation (all plugins)"
 Name: "custom"; Description: "Custom installation (choose plugins)"; Flags: iscustom
 
 [Components]

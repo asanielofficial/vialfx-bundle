@@ -26,7 +26,7 @@ jobs:
       - name: Configure
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build all eleven plugins
+      - name: Build all plugins
         run: cmake --build build
 
       - name: Load every plugin in a test host
@@ -72,7 +72,7 @@ jobs:
       - name: Configure
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DVITALFX_BUILD_TESTS=OFF
 
-      - name: Build all eleven plugins
+      - name: Build all plugins
         run: cmake --build build
 
       - name: Collect bundle
@@ -117,7 +117,7 @@ jobs:
       - name: Configure (universal x86_64 + arm64)
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DVITALFX_BUILD_TESTS=OFF
 
-      - name: Build all eleven plugins
+      - name: Build all plugins
         run: cmake --build build
 
       - name: Ad-hoc sign and collect bundle

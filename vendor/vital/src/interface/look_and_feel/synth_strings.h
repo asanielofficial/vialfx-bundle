@@ -169,7 +169,8 @@ namespace strings {
     "flanger",
     "phaser",
     "reverb",
-    "pitch_shifter"
+    "pitch_shifter",
+    "utility"
   };
 
   const std::string kSyncedFrequencyNames[] = {
@@ -282,6 +283,7 @@ namespace strings {
     "PHASER",
     "REVERB",
     "PITCH SHIFTER",
+    "UTILITY",
   };
 
   const std::string kDestinationMenuNames[vital::constants::kNumSourceDestinations + vital::constants::kNumEffects] = {
@@ -300,6 +302,7 @@ namespace strings {
     "Phaser",
     "Reverb",
     "Pitch Shifter",
+    "Utility",
   };
 
   const std::string kPitchShifterModeNames[] = {

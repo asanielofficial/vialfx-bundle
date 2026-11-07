@@ -158,6 +158,28 @@ namespace vital {
       ValueDetails::kExponential, false, " Hz", "Reverb Chorus Frequency", nullptr },
     { "reverb_on", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
       ValueDetails::kIndexed, false, "", "Reverb Switch", strings::kOffOnNames },
+    { "utility_on", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Utility Switch", strings::kOffOnNames },
+    { "utility_gain", 0x000000, -30.0, 30.0, 0.0, 0.0, 1.0,
+      ValueDetails::kLinear, false, " dB", "Utility Gain", nullptr },
+    { "utility_pan", 0x000000, -1.0, 1.0, 0.0, 0.0, 100.0,
+      ValueDetails::kLinear, false, "%", "Utility Pan", nullptr },
+    { "utility_spread", 0x000000, 0.0, 2.0, 1.0, 0.0, 100.0,
+      ValueDetails::kLinear, false, "%", "Utility Spread", nullptr },
+    { "utility_haas", 0x000000, -20.0, 20.0, 0.0, 0.0, 1.0,
+      ValueDetails::kLinear, false, " ms", "Utility Haas", nullptr },
+    { "utility_mono_frequency", 0x000000, 4.321928, 8.965784, 6.906891, 0.0, 1.0,
+      ValueDetails::kExponential, false, " Hz", "Utility Mono Bass Frequency", nullptr },
+    { "utility_invert_left", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Utility Polarity Invert Left", strings::kOffOnNames },
+    { "utility_invert_right", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Utility Polarity Invert Right", strings::kOffOnNames },
+    { "utility_swap", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Utility Swap L/R", strings::kOffOnNames },
+    { "utility_dc_filter", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Utility DC Filter", strings::kOffOnNames },
+    { "utility_mono_bass", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Utility Mono Bass", strings::kOffOnNames },
     { "pitch_shifter_on", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
       ValueDetails::kIndexed, false, "", "Pitch Shifter Switch", strings::kOffOnNames },
     { "pitch_shifter_mode", 0x000000, 0.0, 3.0, 0.0, 0.0, 1.0,
@@ -606,7 +628,7 @@ namespace vital {
     // VialFX: the one effect in this plugin is on by default (so "Init Preset" keeps it running).
     {
       static const char* const kVialFxOn[] = { "chorus_on", "compressor_on", "delay_on", "distortion_on", "eq_on",
-                                               "filter_fx_on", "flanger_on", "phaser_on", "reverb_on", "pitch_shifter_on" };
+                                               "filter_fx_on", "flanger_on", "phaser_on", "reverb_on", "pitch_shifter_on", "utility_on" };
       details_lookup_[kVialFxOn[VITALFX_EFFECT]].default_value = 1.0f;
     }
 #endif

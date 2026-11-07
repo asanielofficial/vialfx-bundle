@@ -26,6 +26,7 @@
 #include "phaser_module.h"
 #include "reverb_module.h"
 #include "pitch_shifter_module.h"
+#include "utility_module.h"
 #include "synth_strings.h"
 
 namespace vital {
@@ -106,6 +107,8 @@ namespace vital {
         return new ReverbModule();
       case constants::kPitchShifter:
         return new PitchShifterModule();
+      case constants::kUtility:
+        return new UtilityModule();
       default:
         return nullptr;
     }

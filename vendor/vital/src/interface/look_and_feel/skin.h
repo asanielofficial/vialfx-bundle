@@ -53,6 +53,7 @@ class Skin {
       kPhaser,
       kReverb,
       kPitchShifter,
+      kUtility,
       kModulationDragDrop,
       kModulationMatrix,
       kPresetBrowser,

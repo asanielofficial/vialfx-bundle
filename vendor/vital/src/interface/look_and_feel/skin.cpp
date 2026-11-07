@@ -48,6 +48,7 @@ namespace {
     "Phaser",
     "Reverb",
     "Pitch Shifter",
+    "Utility",
     "Modulation Drag Drop",
     "Modulation Matrix",
     "Preset Browser",

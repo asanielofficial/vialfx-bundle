@@ -22,6 +22,7 @@ int main(int argc, char** argv) {
   const bool test_editor = argc > 2 && String(argv[2]) == "--editor";
   const bool keytrack_test = argc > 2 && String(argv[2]) == "--keytrack";   // filter plugin: MIDI note -> cutoff
   const bool pitch_test = argc > 2 && String(argv[2]) == "--pitch";   // pitch shifter: measured pitch per mode
+  const bool utility_test = argc > 2 && String(argv[2]) == "--utility";   // utility: gain/pan/invert/swap/width/haas/mono bass
   const bool editor_only = argc > 2 && String(argv[2]) == "--editor-only";   // keep window up ~15 s for screenshots
 
   AudioPluginFormatManager formats;
@@ -168,6 +169,115 @@ int main(int argc, char** argv) {
       CHECK(std::abs(c_auto / c0 - 1.0) < 0.25, (String(names[m]) + ": auto formant keeps the vowel envelope").toRawUTF8());
       CHECK(c_up > c_auto * 1.2, (String(names[m]) + ": formant +12 st moves the envelope up").toRawUTF8());
     }
+    std::printf(failures ? "\n%d FAILURE(S)\n" : "\nALL CHECKS PASSED\n", failures);
+    return failures ? 1 : 0;
+  }
+
+  if (utility_test) {
+    auto find = [&](const char* name) -> AudioProcessorParameter* {
+      for (auto* p : params) if (p->getName(64).equalsIgnoreCase(name)) return p;
+      return nullptr;
+    };
+    const char* names[] = { "Utility Gain", "Utility Pan", "Utility Spread", "Utility Haas", "Utility Mono Bass Frequency",
+                            "Utility Polarity Invert Left", "Utility Polarity Invert Right", "Utility Swap L/R",
+                            "Utility DC Filter", "Utility Mono Bass" };
+    AudioProcessorParameter* P[10];
+    bool all = true;
+    for (int i = 0; i < 10; ++i) { P[i] = find(names[i]); all = all && P[i]; if (!P[i]) std::printf("      missing '%s'\n", names[i]); }
+    CHECK(all, "utility parameters found");
+    if (!all) return 1;
+    enum { kGain, kPan, kSpread, kHaas, kFreq, kInvL, kInvR, kSwap, kDc, kBass };
+    const int block = 512;
+    plugin->setPlayConfigDetails(2, 2, 48000.0, block);
+    plugin->prepareToPlay(48000.0, block);
+    auto reset = [&]() {
+      P[kGain]->setValue(0.5f); P[kPan]->setValue(0.5f); P[kSpread]->setValue(0.5f); P[kHaas]->setValue(0.5f);
+      P[kFreq]->setValue((float) ((std::log2(120.0) - 4.321928) / 4.643856));
+      for (int i = kInvL; i <= kBass; ++i) P[i]->setValue(0.0f);
+    };
+    // Plays two sines (left f_l, right f_r, optional DC offset) and returns the settled output channels.
+    struct Out { std::vector<float> l, r; };
+    auto play = [&](double f_l, double f_r, float amp_l, float amp_r, float dc = 0.0f) {
+      plugin->reset();
+      Out out; MidiBuffer midi; AudioBuffer<float> buf(2, block);
+      double pl = 0, pr = 0;
+      for (int b = 0; b < 140; ++b) {
+        for (int i = 0; i < block; ++i) {
+          buf.setSample(0, i, amp_l * (float) std::sin(pl) + dc); buf.setSample(1, i, amp_r * (float) std::sin(pr) + dc);
+          pl += 2 * MathConstants<double>::pi * f_l / 48000.0; pr += 2 * MathConstants<double>::pi * f_r / 48000.0;
+        }
+        plugin->processBlock(buf, midi);
+        if (b >= 100) for (int i = 0; i < block; ++i) { out.l.push_back(buf.getSample(0, i)); out.r.push_back(buf.getSample(1, i)); }
+      }
+      return out;
+    };
+    auto rms = [](const std::vector<float>& v) { double s = 0; for (float x : v) s += x * x; return std::sqrt(s / std::max<size_t>(1, v.size())); };
+    const double kVol = 0.5012;   // plugin volume default is -6 dB
+
+    reset();
+    Out base = play(1000, 1000, 0.4f, 0.2f);
+    double bl = rms(base.l), br = rms(base.r);
+    std::printf("      neutral: L rms %.4f (in %.4f), R rms %.4f (in %.4f)\n", bl, 0.4 * kVol / 1.4142, br, 0.2 * kVol / 1.4142);
+    CHECK(std::abs(bl / (0.4 * kVol / 1.4142) - 1.0) < 0.03 && std::abs(br / (0.2 * kVol / 1.4142) - 1.0) < 0.03, "utility neutral settings pass audio through");
+
+    P[kGain]->setValue((6.0f + 30.0f) / 60.0f);
+    Out g = play(1000, 1000, 0.4f, 0.2f);
+    std::printf("      gain +6 dB: ratio %.3f (expect 1.995)\n", rms(g.l) / bl);
+    CHECK(std::abs(rms(g.l) / bl - 1.995) < 0.06, "gain +6 dB doubles the level");
+    reset();
+
+    P[kPan]->setValue(1.0f);
+    Out pn = play(1000, 1000, 0.4f, 0.2f);
+    std::printf("      pan +100%%: L %.4f R %.4f (neutral R %.4f)\n", rms(pn.l), rms(pn.r), br);
+    CHECK(rms(pn.l) < 0.02 * bl && std::abs(rms(pn.r) / br - 1.0) < 0.03, "pan hard right silences the left, keeps the right");
+    reset();
+
+    P[kInvL]->setValue(1.0f);
+    Out iv = play(1000, 1000, 0.4f, 0.2f);
+    double corr = 0, ne = 0; for (size_t i = 0; i < iv.l.size(); ++i) { corr += iv.l[i] * base.l[i]; ne += base.l[i] * base.l[i]; }
+    std::printf("      invert L: correlation with neutral %.3f, R rms ratio %.3f\n", corr / ne, rms(iv.r) / br);
+    CHECK(corr / ne < -0.97 && std::abs(rms(iv.r) / br - 1.0) < 0.03, "polarity invert flips only the left channel");
+    reset();
+
+    P[kSwap]->setValue(1.0f);
+    Out sw = play(1000, 1000, 0.4f, 0.2f);
+    std::printf("      swap: L rms %.4f (was R %.4f), R rms %.4f (was L %.4f)\n", rms(sw.l), br, rms(sw.r), bl);
+    CHECK(std::abs(rms(sw.l) / br - 1.0) < 0.03 && std::abs(rms(sw.r) / bl - 1.0) < 0.03, "swap L/R exchanges the channels");
+    reset();
+
+    P[kSpread]->setValue(0.0f);
+    Out sp = play(1000, 1000, 0.4f, 0.0f);   // left only -> becomes mono at 0% spread
+    std::printf("      spread 0%%: L %.4f R %.4f\n", rms(sp.l), rms(sp.r));
+    CHECK(std::abs(rms(sp.l) - rms(sp.r)) < 0.02 * rms(sp.l) + 1e-6, "spread 0% collapses to mono");
+    reset();
+
+    P[kHaas]->setValue((10.0f + 20.0f) / 40.0f);   // +10 ms delays the right channel
+    Out hs = play(1000, 1000, 0.4f, 0.4f);
+    // 1 kHz sine: a 10 ms delay is exactly 10 cycles, so measure with a 1.1 kHz-like phase test instead using 125 Hz (10 ms = 1.25 cycles)
+    reset(); P[kHaas]->setValue((10.0f + 20.0f) / 40.0f);
+    Out hs2 = play(125, 125, 0.4f, 0.4f);
+    double dot = 0, nl = 0, nr = 0;
+    for (size_t i = 0; i < hs2.l.size(); ++i) { dot += hs2.l[i] * hs2.r[i]; nl += hs2.l[i] * hs2.l[i]; nr += hs2.r[i] * hs2.r[i]; }
+    double c = dot / std::sqrt(nl * nr);
+    std::printf("      haas +10 ms @125 Hz: L/R correlation %.3f (expect cos(90 deg) = 0)\n", c);
+    CHECK(std::abs(c) < 0.08 && rms(hs.r) > 0.9 * bl, "haas delays the right channel by 10 ms");
+    reset();
+
+    P[kBass]->setValue(1.0f);
+    Out mb = play(40, 40, 0.4f, -0.4f);   // out-of-phase bass below the crossover must cancel
+    Out mh = play(5000, 5000, 0.4f, -0.4f);   // highs above it are left alone
+    std::printf("      mono bass @120 Hz: 40 Hz anti-phase -> L rms %.4f; 5 kHz anti-phase -> L rms %.4f (neutral %.4f)\n",
+                rms(mb.l), rms(mh.l), 0.4 * kVol / 1.4142);
+    CHECK(rms(mb.l) < 0.15 * 0.4 * kVol / 1.4142, "mono bass cancels out-of-phase lows");
+    CHECK(rms(mh.l) > 0.9 * 0.4 * kVol / 1.4142, "mono bass leaves the highs alone");
+    reset();
+
+    P[kDc]->setValue(1.0f);
+    Out dc = play(1000, 1000, 0.0f, 0.0f, 0.3f);
+    double mean = 0; for (float x : dc.l) mean += x; mean /= dc.l.size();
+    std::printf("      DC filter: mean after settling %.5f (input 0.3)\n", mean);
+    CHECK(std::abs(mean) < 0.01, "DC filter removes a constant offset");
+    for (int i = 0; i < 200; ++i) { AudioBuffer<float> b(2, block); MidiBuffer m; plugin->processBlock(b, m); }
     std::printf(failures ? "\n%d FAILURE(S)\n" : "\nALL CHECKS PASSED\n", failures);
     return failures ? 1 : 0;
   }
@@ -327,6 +437,7 @@ int main(int argc, char** argv) {
   // State round trip: change a parameter, save, change again, restore.
   if (!params.isEmpty()) {
     AudioProcessorParameter* target = mix ? mix : params[0];
+    if (!mix) for (auto* p : params) if (p->getNumSteps() > 100 && p->getName(64).contains(" ") && !p->getName(64).startsWithIgnoreCase("volume")) { target = p; break; }
     target->setValue(0.3f);
     MemoryBlock state; plugin->getStateInformation(state);
     CHECK(state.getSize() > 100, "state serialises");

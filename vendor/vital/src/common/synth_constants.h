@@ -108,6 +108,7 @@ namespace vital {
       kPhaser,
       kReverb,
       kPitchShifter,
+      kUtility,
       kNumEffects
     };
 

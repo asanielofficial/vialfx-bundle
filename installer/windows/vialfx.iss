@@ -44,6 +44,7 @@ Name: "flanger"; Description: "Vial Flanger"; Types: full custom
 Name: "phaser"; Description: "Vial Phaser"; Types: full custom
 Name: "reverb"; Description: "Vial Reverb"; Types: full custom
 Name: "pitchshifter"; Description: "Vial Pitch Shifter"; Types: full custom
+Name: "utility"; Description: "Vial Utility"; Types: full custom
 
 [Tasks]
 Name: "vst3"; Description: "Install VST3 versions (C:\Program Files\Common Files\VST3)"; GroupDescription: "Plugin formats:"
@@ -61,6 +62,7 @@ Source: "{#SourceDir}\VST3\Vial Flanger.vst3\*"; DestDir: "{commoncf64}\VST3\Via
 Source: "{#SourceDir}\VST3\Vial Phaser.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Phaser.vst3"; Components: phaser; Tasks: vst3; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourceDir}\VST3\Vial Reverb.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Reverb.vst3"; Components: reverb; Tasks: vst3; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourceDir}\VST3\Vial Pitch Shifter.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Pitch Shifter.vst3"; Components: pitchshifter; Tasks: vst3; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\VST3\Vial Utility.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Utility.vst3"; Components: utility; Tasks: vst3; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourceDir}\CLAP\Vial Chorus.clap"; DestDir: "{commoncf64}\CLAP"; Components: chorus; Tasks: clap; Flags: ignoreversion
 Source: "{#SourceDir}\CLAP\Vial Compressor.clap"; DestDir: "{commoncf64}\CLAP"; Components: compressor; Tasks: clap; Flags: ignoreversion
 Source: "{#SourceDir}\CLAP\Vial Delay.clap"; DestDir: "{commoncf64}\CLAP"; Components: delay; Tasks: clap; Flags: ignoreversion
@@ -71,6 +73,7 @@ Source: "{#SourceDir}\CLAP\Vial Flanger.clap"; DestDir: "{commoncf64}\CLAP"; Com
 Source: "{#SourceDir}\CLAP\Vial Phaser.clap"; DestDir: "{commoncf64}\CLAP"; Components: phaser; Tasks: clap; Flags: ignoreversion
 Source: "{#SourceDir}\CLAP\Vial Reverb.clap"; DestDir: "{commoncf64}\CLAP"; Components: reverb; Tasks: clap; Flags: ignoreversion
 Source: "{#SourceDir}\CLAP\Vial Pitch Shifter.clap"; DestDir: "{commoncf64}\CLAP"; Components: pitchshifter; Tasks: clap; Flags: ignoreversion
+Source: "{#SourceDir}\CLAP\Vial Utility.clap"; DestDir: "{commoncf64}\CLAP"; Components: utility; Tasks: clap; Flags: ignoreversion
 
 [Messages]
 FinishedLabel=VialFX-Bundle is installed. Rescan plugins in your DAW to see the Vial effects.

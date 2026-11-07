@@ -104,6 +104,10 @@ jobs:
 
   macos:
     runs-on: macos-15
+    env:
+      # JUCE 6.0.5 still calls CGWindowListCreateImage, which the macOS 15 SDK marks unavailable when
+      # the deployment target is 15+. Pin the target (also used by the juceaide helper build).
+      MACOSX_DEPLOYMENT_TARGET: "10.13"
     steps:
       - uses: actions/checkout@v4
 

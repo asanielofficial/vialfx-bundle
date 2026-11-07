@@ -370,7 +370,7 @@ namespace vital {
       ValueDetails::kLinear, false, " dB", "EQ High Gain", nullptr },
     { "eq_high_resonance", 0x000000, 0.0, 1.0, 0.3163, 0.0, 100.0,
       ValueDetails::kQuadratic, false, "", "EQ High Resonance", nullptr },
-    { "effect_chain_order", 0x000000, 0.0, vital::utils::factorial(vital::kNumEffects) - 1, 0.0, 0.0, 1.0,
+    { "effect_chain_order", 0x000000, 0.0, static_cast<float>(vital::utils::factorial(vital::kNumEffects) - 1), 0.0, 0.0, 1.0,
       ValueDetails::kIndexed, false, "", "Effect Chain Order", nullptr },
     { "voice_priority", 0x000000, 0.0, VoiceHandler::kNumVoicePriorities - 1, VoiceHandler::kRoundRobin, 0.0, 1.0,
       ValueDetails::kIndexed, false, "", "Voice Priority", strings::kVoicePriorityNames },

@@ -68,5 +68,8 @@ namespace vital {
     SynthModule::process(num_samples);
     utility_->processWithInput(audio_in, num_samples);
     meter_->process(num_samples);
+    // Status outputs of sub modules are not refreshed by the engine, so publish the meter values for the UI here.
+    for (auto& status_source : data_->status_outputs)
+      status_source.second->update();
   }
 } // namespace vital

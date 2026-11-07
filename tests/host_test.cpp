@@ -4,6 +4,9 @@
 #include <JuceHeader.h>
 #include <cmath>
 #include <complex>
+#include <atomic>
+#include <thread>
+#include <chrono>
 #include <cstdio>
 #include <vector>
 
@@ -70,7 +73,28 @@ int main(int argc, char** argv) {
     editor->setTopLeftPosition(40, 40);
     editor->addToDesktop(ComponentPeer::windowHasTitleBar);
     editor->setVisible(true);
+    // "--audio": run a 220 Hz tone through the plugin in real time so meters and viewers have something to show.
+    std::atomic<bool> stop{false};
+    std::thread audio;
+    if (argc > 3 && String(argv[3]) == "--audio") {
+      plugin->setPlayConfigDetails(2, 2, 48000.0, 512);
+      plugin->prepareToPlay(48000.0, 512);
+      audio = std::thread([&] {
+        AudioBuffer<float> buf(2, 512); MidiBuffer midi; double ph = 0;
+        while (!stop) {
+          for (int i = 0; i < 512; ++i) {
+            float v = 0.35f * (float) std::sin(ph) * (0.6f + 0.4f * (float) std::sin(ph * 0.004));
+            ph += 2 * MathConstants<double>::pi * 220.0 / 48000.0;
+            buf.setSample(0, i, v); buf.setSample(1, i, v * 0.7f);
+          }
+          plugin->processBlock(buf, midi);
+          std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+      });
+    }
     MessageManager::getInstance()->runDispatchLoopUntil(60000);
+    stop = true;
+    if (audio.joinable()) audio.join();
     editor->removeFromDesktop();
     return 0;
   }

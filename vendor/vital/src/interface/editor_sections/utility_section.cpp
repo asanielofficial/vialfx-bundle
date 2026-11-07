@@ -12,7 +12,7 @@
 #include <cmath>
 #include <vector>
 
-// Little LED dots at the left of each pill toggle; shows the toggles that are on (or, with on = false, off).
+// LED dots at the left of each pill toggle; shows the toggles that are on (or, with on = false, off).
 class UtilityLeds : public OpenGlMultiQuad {
   public:
     UtilityLeds(std::vector<SynthButton*> buttons, bool on) :
@@ -31,7 +31,7 @@ class UtilityLeds : public OpenGlMultiQuad {
           continue;
         Rectangle<int> bounds = button->getBounds();
         float led = std::round(bounds.getHeight() * 0.34f);
-        float x = bounds.getX() - std::round(bounds.getHeight() * 0.57f);
+        float x = bounds.getX() + std::round(bounds.getHeight() * 0.38f);
         float y = bounds.getY() + std::round((bounds.getHeight() - led) * 0.5f);
         setQuad(count++, 2.0f * x / w - 1.0f, 1.0f - 2.0f * (y + led) / h, 2.0f * led / w, 2.0f * led / h);
       }
@@ -39,7 +39,7 @@ class UtilityLeds : public OpenGlMultiQuad {
         return;
 
       setNumQuads(count);
-      setColor(on_ ? findColour(Skin::kBodyText, true) : findColour(Skin::kIconButtonOff, true));
+      setColor(on_ ? Colours::white : findColour(Skin::kIconButtonOff, true));
       OpenGlMultiQuad::render(open_gl, animate);
     }
 
@@ -48,17 +48,21 @@ class UtilityLeds : public OpenGlMultiQuad {
     bool on_;
 };
 
-// Vertical output level meter (reads the module's peak meter status outputs).
+// Vertical output level meter: bar follows the output peak (-60..+6 dB), a thin line holds the recent peak and the
+// bar turns red above 0 dBFS. Reads the module's peak meter status outputs.
 class UtilityMeter : public OpenGlMultiQuad {
   public:
-    UtilityMeter() : OpenGlMultiQuad(3, Shaders::kRoundedRectangleFragment), parent_(nullptr),
+    static constexpr float kMinDb = -60.0f, kMaxDb = 6.0f;
+
+    static float dbToPosition(float db) { return std::min(std::max((db - kMinDb) / (kMaxDb - kMinDb), 0.0f), 1.0f); }
+
+    UtilityMeter() : OpenGlMultiQuad(1, Shaders::kRoundedRectangleFragment), parent_(nullptr),
                      level_(nullptr), peak_(nullptr), smoothed_(0.0f) {
       setTargetComponent(this);
     }
 
     void init(OpenGlWrapper& open_gl) override {
-      if (parent_ == nullptr)
-        parent_ = findParentComponentOfClass<SynthGuiInterface>();
+      parent_ = findParentComponentOfClass<SynthGuiInterface>();
       if (parent_ && parent_->getSynth()) {
         level_ = parent_->getSynth()->getStatusOutput("utility_level");
         peak_ = parent_->getSynth()->getStatusOutput("utility_peak");
@@ -67,29 +71,39 @@ class UtilityMeter : public OpenGlMultiQuad {
     }
 
     void render(OpenGlWrapper& open_gl, bool animate) override {
-      float rounding = findValue(Skin::kWidgetRoundedCorner) * 0.5f;
-      setRounding(rounding);
+      const float h = getHeight();
+      if (h <= 0.0f)
+        return;
+      setRounding(findValue(Skin::kWidgetRoundedCorner) * 0.5f);
 
-      float t = 0.0f;
-      if (level_ && animate) {
-        float peak = std::max(level_->value()[0], level_->value()[1]);
-        float db = vital::utils::magnitudeToDb(peak);
-        t = std::max((db + 60.0f) / 66.0f, 0.0f);     // -60 dB .. +6 dB
-        t = std::min(t, 1.0f);
-      }
-      smoothed_ = t > smoothed_ ? t : smoothed_ + (t - smoothed_) * 0.25f;
+      float level = 0.0f, hold = 0.0f;
+      if (level_)
+        level = std::max(level_->value()[0], level_->value()[1]);
+      if (peak_)
+        hold = std::max(peak_->value()[0], peak_->value()[1]);
+      float target = dbToPosition(vital::utils::magnitudeToDb(std::max(level, 1.0e-6f)));
+      smoothed_ = target > smoothed_ ? target : smoothed_ + (target - smoothed_) * 0.2f;
 
-      float h = getHeight();
-      float fill = std::max(smoothed_ * h, 0.0f);
+      // Track.
+      setNumQuads(1);
       setColor(findColour(Skin::kWidgetBackground, true));
       setQuad(0, -1.0f, -1.0f, 2.0f, 2.0f);
-      setQuadVertical(0, -1.0f, 2.0f);
-      OpenGlMultiQuad::setNumQuads(1);
       OpenGlMultiQuad::render(open_gl, animate);
 
-      if (fill > 0.5f) {
-        setColor(Colours::white);
-        setQuad(0, -1.0f, -1.0f, 2.0f, 2.0f * fill / h);
+      // Level.
+      if (smoothed_ * h > 1.0f) {
+        const bool clipping = level >= 1.0f;
+        setColor(clipping ? Colour(0xffff5a5a) : Colours::white);
+        setQuad(0, -1.0f, -1.0f, 2.0f, 2.0f * smoothed_);
+        OpenGlMultiQuad::render(open_gl, animate);
+      }
+
+      // Held peak.
+      float hold_position = dbToPosition(vital::utils::magnitudeToDb(std::max(hold, 1.0e-6f)));
+      if (hold_position * h > 3.0f) {
+        setColor(Colours::white.withAlpha(0.85f));
+        float y = -1.0f + 2.0f * hold_position;
+        setQuad(0, -1.0f, y - 2.0f * 1.5f / h, 2.0f, 2.0f * 2.0f / h);
         OpenGlMultiQuad::render(open_gl, animate);
       }
     }
@@ -102,18 +116,17 @@ class UtilityMeter : public OpenGlMultiQuad {
 };
 
 UtilitySection::UtilitySection(String name) : SynthSection(name) {
-  auto add_toggle = [&](std::unique_ptr<SynthButton>& button, const char* param, const char* text) {
+  auto add_toggle = [&](std::unique_ptr<SynthButton>& button, const char* param) {
     button = std::make_unique<SynthButton>(param);
     addButton(button.get());
-    button->setText(text);
-    button->setNoBackground();
-    button->setJustification(Justification::centred);
+    button->setText(" ");        // non-empty so the button does not fall back to its parameter name
+    button->setNoBackground();   // the pill and its text are drawn by the section; the LED by UtilityLeds
   };
-  add_toggle(invert_left_, "utility_invert_left", "L");
-  add_toggle(invert_right_, "utility_invert_right", "R");
-  add_toggle(swap_, "utility_swap", "Swap L/R");
-  add_toggle(dc_filter_, "utility_dc_filter", "DC Filter");
-  add_toggle(mono_bass_, "utility_mono_bass", "Mono Bass");
+  add_toggle(invert_left_, "utility_invert_left");
+  add_toggle(invert_right_, "utility_invert_right");
+  add_toggle(swap_, "utility_swap");
+  add_toggle(dc_filter_, "utility_dc_filter");
+  add_toggle(mono_bass_, "utility_mono_bass");
 
   auto add_knob = [&](std::unique_ptr<SynthSlider>& slider, const char* param, bool bipolar) {
     slider = std::make_unique<SynthSlider>(param);
@@ -146,6 +159,7 @@ UtilitySection::UtilitySection(String name) : SynthSection(name) {
   addButton(on_.get());
   setActivator(on_.get());
   setSkinOverride(Skin::kUtility);
+  updateControls();
 }
 
 UtilitySection::~UtilitySection() { }
@@ -154,25 +168,49 @@ void UtilitySection::paintBackground(Graphics& g) {
   SynthSection::paintBackground(g);
   setLabelFont(g);
 
-  for (SynthButton* button : { invert_left_.get(), invert_right_.get(), swap_.get(), dc_filter_.get(), mono_bass_.get() }) {
-    Rectangle<float> bounds = button->getBounds().toFloat();
-    bounds.setLeft(bounds.getX() - std::round(bounds.getHeight() * 0.95f));
+  const float ratio_x = getWidth() / 580.0f, ratio_y = getHeight() / 136.5f;
+
+  // Pill toggles: background and caption (the LED is drawn live on top).
+  struct Pill { SynthButton* button; const char* text; };
+  const Pill pills[] = { { invert_left_.get(), "L" }, { invert_right_.get(), "R" }, { swap_.get(), "Swap L/R" },
+                         { dc_filter_.get(), "DC Filter" }, { mono_bass_.get(), "Mono Bass" } };
+  for (const Pill& pill : pills) {
+    Rectangle<float> bounds = pill.button->getBounds().toFloat();
     g.setColour(findColour(Skin::kLabelBackground, true));
     g.fillRoundedRectangle(bounds, bounds.getHeight() * 0.5f);
+
+    const float h = bounds.getHeight();
+    const float text_x = bounds.getX() + h * 0.38f + std::round(h * 0.34f) + h * 0.28f;
+    g.setColour(findColour(Skin::kBodyText, true));
+    g.setFont(Fonts::instance()->proportional_regular().withPointHeight(h * 0.50f));
+    g.drawText(TRANS(pill.text), Rectangle<float>(text_x, bounds.getY(), bounds.getRight() - text_x - h * 0.2f, h),
+               Justification::centredLeft, false);
   }
 
+  g.setColour(findColour(Skin::kBodyText, true).withAlpha(0.9f));
+  g.setFont(Fonts::instance()->proportional_light().withPointHeight(14.0f * ratio_y));
+  g.drawText(TRANS("Polarity Invert"), Rectangle<int>(std::round(42 * ratio_x), std::round(5 * ratio_y),
+                                                        std::round(92 * ratio_x), std::round(23 * ratio_y)),
+             Justification::centredLeft, false);
+
+  setLabelFont(g);
   drawLabelForComponent(g, TRANS("GAIN"), gain_.get());
   drawLabelForComponent(g, TRANS("PAN"), pan_.get());
   drawLabelForComponent(g, TRANS("SPREAD"), spread_.get());
   drawLabelForComponent(g, TRANS("HAAS"), haas_.get());
-  drawLabelForComponent(g, TRANS("FREQ"), frequency_.get());
+  drawLabelForComponent(g, TRANS("BASS FREQ"), frequency_.get());
 
-  const float ratio_x = getWidth() / 580.0f, ratio_y = getHeight() / 136.5f;
-  g.setColour(findColour(Skin::kBodyText, true).withAlpha(0.9f));
-  g.setFont(Fonts::instance()->proportional_light().withPointHeight(14.0f * ratio_y));
-  g.drawText(TRANS("Polarity Invert"), Rectangle<int>(std::round(42 * ratio_x), std::round(2 * ratio_y),
-                                                        std::round(90 * ratio_x), std::round(26 * ratio_y)),
-             Justification::centredLeft, false);
+  // dB scale next to the meter.
+  const float meter_x = meter_->getRight() + 4.0f * ratio_x;
+  g.setColour(findColour(Skin::kBodyText, true).withAlpha(0.55f));
+  g.setFont(Fonts::instance()->proportional_regular().withPointHeight(7.5f * ratio_y));
+  for (float db : { 0.0f, -12.0f, -24.0f, -48.0f }) {
+    float position = (db - UtilityMeter::kMinDb) / (UtilityMeter::kMaxDb - UtilityMeter::kMinDb);
+    float y = meter_->getBottom() - position * meter_->getHeight();
+    g.fillRect(Rectangle<float>(meter_->getRight() + 1.0f, std::round(y), 2.0f * ratio_x, 1.0f));
+    g.drawText(String(static_cast<int>(db)), Rectangle<float>(meter_x + 2.0f, y - 5.0f * ratio_y, 22.0f * ratio_x, 10.0f * ratio_y),
+               Justification::centredLeft, false);
+  }
 }
 
 void UtilitySection::resized() {
@@ -182,21 +220,44 @@ void UtilitySection::resized() {
                           std::round(w * ratio_x), std::round(h * ratio_y));
   };
 
-  // Each pill is the button plus an LED zone of ~22 px on its left.
-  invert_left_->setBounds(rect(155.0f, 5.0f, 13.0f, 23.0f));
-  invert_right_->setBounds(rect(203.0f, 5.0f, 13.0f, 23.0f));
-  swap_->setBounds(rect(257.0f, 5.0f, 50.0f, 23.0f));
-  dc_filter_->setBounds(rect(351.0f, 5.0f, 51.0f, 23.0f));
-  mono_bass_->setBounds(rect(443.0f, 5.0f, 60.0f, 23.0f));
+  // Top row: polarity pair, then swap / DC filter; Mono Bass sits right above its frequency knob.
+  invert_left_->setBounds(rect(136.0f, 5.0f, 38.0f, 23.0f));
+  invert_right_->setBounds(rect(180.0f, 5.0f, 38.0f, 23.0f));
+  swap_->setBounds(rect(232.0f, 5.0f, 76.0f, 23.0f));
+  dc_filter_->setBounds(rect(316.0f, 5.0f, 80.0f, 23.0f));
+  mono_bass_->setBounds(rect(404.0f, 5.0f, 86.0f, 23.0f));
 
-  gain_->setBounds(rect(32.0f, 58.0f, 84.0f, 66.0f));
-  pan_->setBounds(rect(130.0f, 58.0f, 84.0f, 66.0f));
-  spread_->setBounds(rect(224.0f, 58.0f, 84.0f, 66.0f));
-  haas_->setBounds(rect(321.0f, 58.0f, 84.0f, 66.0f));
-  frequency_->setBounds(rect(416.0f, 58.0f, 84.0f, 66.0f));
-  meter_->setBounds(rect(529.0f, 15.0f, 13.0f, 96.0f));
+  // Knob row, evenly spaced; the last one belongs to Mono Bass.
+  gain_->setBounds(rect(32.0f, 52.0f, 84.0f, 66.0f));
+  pan_->setBounds(rect(125.0f, 52.0f, 84.0f, 66.0f));
+  spread_->setBounds(rect(218.0f, 52.0f, 84.0f, 66.0f));
+  haas_->setBounds(rect(311.0f, 52.0f, 84.0f, 66.0f));
+  frequency_->setBounds(rect(405.0f, 52.0f, 84.0f, 66.0f));
+
+  meter_->setBounds(rect(521.0f, 10.0f, 12.0f, 108.0f));
   leds_on_->setBounds(getLocalBounds());
   leds_off_->setBounds(getLocalBounds());
 
   SynthSection::resized();
+}
+
+void UtilitySection::updateControls() {
+  // The crossover only matters while Mono Bass is on.
+  frequency_->setActive(mono_bass_->getToggleState() && isActive());
+}
+
+void UtilitySection::setActive(bool active) {
+  SynthSection::setActive(active);
+  updateControls();
+}
+
+void UtilitySection::buttonClicked(Button* clicked_button) {
+  SynthSection::buttonClicked(clicked_button);
+  if (clicked_button == mono_bass_.get())
+    updateControls();
+}
+
+void UtilitySection::setAllValues(vital::control_map& controls) {
+  SynthSection::setAllValues(controls);
+  updateControls();
 }

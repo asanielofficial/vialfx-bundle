@@ -17,8 +17,13 @@ class UtilitySection : public SynthSection {
     void paintBackground(Graphics& g) override;
     void paintBackgroundShadow(Graphics& g) override { if (isActive()) paintTabShadow(g); }
     void resized() override;
+    void setActive(bool active) override;
+    void buttonClicked(Button* clicked_button) override;
+    void setAllValues(vital::control_map& controls) override;
 
   private:
+    void updateControls();
+
     std::unique_ptr<SynthButton> on_;
     std::unique_ptr<SynthButton> invert_left_;
     std::unique_ptr<SynthButton> invert_right_;

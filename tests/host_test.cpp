@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
     String n = p->getName(64);
     if (n.equalsIgnoreCase("Volume")) has_volume = true;
     if (n.containsIgnoreCase("bypass")) has_bypass = true;
-    if ((n.containsIgnoreCase("dry") && n.containsIgnoreCase("wet")) || n.endsWithIgnoreCase(" mix")) mix = p;
+    if ((n.containsIgnoreCase("dry") && n.containsIgnoreCase("wet")) || (n.endsWithIgnoreCase(" mix") && found[0]->name.containsIgnoreCase("pitch"))) mix = p;
   }
   CHECK(has_volume, "volume is a host parameter");
   CHECK(has_bypass, "bypass is a host parameter");

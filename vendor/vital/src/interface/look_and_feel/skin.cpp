@@ -47,6 +47,7 @@ namespace {
     "Flanger",
     "Phaser",
     "Reverb",
+    "Pitch Shifter",
     "Modulation Drag Drop",
     "Modulation Matrix",
     "Preset Browser",

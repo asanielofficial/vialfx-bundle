@@ -168,7 +168,8 @@ namespace strings {
     "filter_fx",
     "flanger",
     "phaser",
-    "reverb"
+    "reverb",
+    "pitch_shifter"
   };
 
   const std::string kSyncedFrequencyNames[] = {
@@ -280,6 +281,7 @@ namespace strings {
     "FLANGER",
     "PHASER",
     "REVERB",
+    "PITCH SHIFTER",
   };
 
   const std::string kDestinationMenuNames[vital::constants::kNumSourceDestinations + vital::constants::kNumEffects] = {
@@ -297,6 +299,20 @@ namespace strings {
     "Flanger",
     "Phaser",
     "Reverb",
+    "Pitch Shifter",
+  };
+
+  const std::string kPitchShifterModeNames[] = {
+    "GRANULAR",
+    "MB-GRANULAR",
+    "RETRO",
+    "SPECTRAL"
+  };
+
+  const std::string kPitchShifterCompensationNames[] = {
+    "OFF",
+    "LOW",
+    "HIGH"
   };
 
   const std::string kPhaseDistortionNames[] = {

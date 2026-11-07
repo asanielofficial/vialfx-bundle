@@ -158,6 +158,24 @@ namespace vital {
       ValueDetails::kExponential, false, " Hz", "Reverb Chorus Frequency", nullptr },
     { "reverb_on", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
       ValueDetails::kIndexed, false, "", "Reverb Switch", strings::kOffOnNames },
+    { "pitch_shifter_on", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Pitch Shifter Switch", strings::kOffOnNames },
+    { "pitch_shifter_mode", 0x000000, 0.0, 3.0, 0.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Pitch Shifter Mode", strings::kPitchShifterModeNames },
+    { "pitch_shifter_compensation", 0x000000, 0.0, 2.0, 0.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Pitch Shifter Compensation", strings::kPitchShifterCompensationNames },
+    { "pitch_shifter_pitch", 0x000000, -24.0, 24.0, 0.0, 0.0, 1.0,
+      ValueDetails::kLinear, false, " st", "Pitch Shifter Pitch", nullptr },
+    { "pitch_shifter_grain", 0x000000, 5.0, 200.0, 40.0, 0.0, 1.0,
+      ValueDetails::kLinear, false, " ms", "Pitch Shifter Grain Size", nullptr },
+    { "pitch_shifter_resolution", 0x000000, 0.0, 1.0, 0.5, 0.0, 100.0,
+      ValueDetails::kLinear, false, "%", "Pitch Shifter Resolution", nullptr },
+    { "pitch_shifter_formant_control", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Pitch Shifter Formant Control", strings::kOffOnNames },
+    { "pitch_shifter_formant", 0x000000, -24.0, 24.0, 0.0, 0.0, 1.0,
+      ValueDetails::kLinear, false, " st", "Pitch Shifter Formant", nullptr },
+    { "pitch_shifter_dry_wet", 0x000000, 0.0, 1.0, 1.0, 0.0, 100.0,
+      ValueDetails::kLinear, false, "%", "Pitch Shifter Mix", nullptr },
     { "sub_on", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
       ValueDetails::kIndexed, false, "", "Sub Switch", strings::kOffOnNames },
     { "sub_direct_out", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
@@ -588,7 +606,7 @@ namespace vital {
     // VialFX: the one effect in this plugin is on by default (so "Init Preset" keeps it running).
     {
       static const char* const kVialFxOn[] = { "chorus_on", "compressor_on", "delay_on", "distortion_on", "eq_on",
-                                               "filter_fx_on", "flanger_on", "phaser_on", "reverb_on" };
+                                               "filter_fx_on", "flanger_on", "phaser_on", "reverb_on", "pitch_shifter_on" };
       details_lookup_[kVialFxOn[VITALFX_EFFECT]].default_value = 1.0f;
     }
 #endif

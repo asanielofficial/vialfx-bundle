@@ -4,6 +4,7 @@
 #include <JuceHeader.h>
 #include <cmath>
 #include <cstdio>
+#include <vector>
 
 static int failures = 0;
 #define CHECK(cond, msg) do { if (!(cond)) { std::printf("FAIL: %s\n", msg); ++failures; } else std::printf("ok:   %s\n", msg); } while (0)
@@ -20,6 +21,7 @@ int main(int argc, char** argv) {
   if (argc < 2) { std::printf("usage: host_test plugin.vst3 [--editor]\n"); return 2; }
   const bool test_editor = argc > 2 && String(argv[2]) == "--editor";
   const bool keytrack_test = argc > 2 && String(argv[2]) == "--keytrack";   // filter plugin: MIDI note -> cutoff
+  const bool pitch_test = argc > 2 && String(argv[2]) == "--pitch";   // pitch shifter: measured pitch per mode
   const bool editor_only = argc > 2 && String(argv[2]) == "--editor-only";   // keep window up ~15 s for screenshots
 
   AudioPluginFormatManager formats;
@@ -50,7 +52,7 @@ int main(int argc, char** argv) {
     String n = p->getName(64);
     if (n.equalsIgnoreCase("Volume")) has_volume = true;
     if (n.containsIgnoreCase("bypass")) has_bypass = true;
-    if (n.containsIgnoreCase("dry") && n.containsIgnoreCase("wet")) mix = p;
+    if ((n.containsIgnoreCase("dry") && n.containsIgnoreCase("wet")) || n.endsWithIgnoreCase(" mix")) mix = p;
   }
   CHECK(has_volume, "volume is a host parameter");
   CHECK(has_bypass, "bypass is a host parameter");
@@ -68,6 +70,106 @@ int main(int argc, char** argv) {
     MessageManager::getInstance()->runDispatchLoopUntil(60000);
     editor->removeFromDesktop();
     return 0;
+  }
+
+
+  if (pitch_test) {
+    auto find = [&](const char* name) -> AudioProcessorParameter* {
+      for (auto* p : params) if (p->getName(64).equalsIgnoreCase(name)) return p;
+      return nullptr;
+    };
+    auto *mode = find("Pitch Shifter Mode"), *pitch = find("Pitch Shifter Pitch"), *fc = find("Pitch Shifter Formant Control"),
+         *formant = find("Pitch Shifter Formant"), *wet = find("Pitch Shifter Mix");
+    CHECK(mode && pitch && fc && formant && wet, "pitch shifter parameters found");
+    if (!(mode && pitch && fc && formant && wet)) return 1;
+    const int block = 512;
+    plugin->setPlayConfigDetails(2, 2, 48000.0, block);
+    plugin->prepareToPlay(48000.0, block);
+    wet->setValue(1.0f);
+
+    // Plays a tone (sine or vowel-like harmonic series) and returns the output spectrum peak (Hz) and centroid (Hz).
+    auto run = [&](int m, float semis, float formant_semis, bool formant_on, double f0, bool vowel, double& centroid, double& rms_ratio) {
+      mode->setValue(m / 3.0f);
+      pitch->setValue((semis + 24.0f) / 48.0f);
+      formant->setValue((formant_semis + 24.0f) / 48.0f);
+      fc->setValue(formant_on ? 1.0f : 0.0f);
+      plugin->reset();
+      MidiBuffer midi; AudioBuffer<float> buf(2, block);
+      const int total_blocks = 120; const int keep_from = 60;
+      std::vector<float> out, in_keep;
+      double phase = 0, in_sq = 0, out_sq = 0;
+      auto env = [](double f) { return std::exp(-std::pow(std::log2(f / 700.0) / 0.6, 2.0)) + 0.5 * std::exp(-std::pow(std::log2(f / 2400.0) / 0.5, 2.0)); };
+      for (int b = 0; b < total_blocks; ++b) {
+        for (int i = 0; i < block; ++i) {
+          double v = 0;
+          if (!vowel) v = 0.5 * std::sin(phase);
+          else for (int h = 1; h * f0 < 8000; ++h) v += 0.12 * env(h * f0) * std::sin(phase * h);
+          phase += 2.0 * MathConstants<double>::pi * f0 / 48000.0;
+          buf.setSample(0, i, (float) v); buf.setSample(1, i, (float) v);
+          if (b >= keep_from) in_sq += v * v;
+        }
+        plugin->processBlock(buf, midi);
+        if (b >= keep_from) for (int i = 0; i < block; ++i) { out.push_back(buf.getSample(0, i)); out_sq += buf.getSample(0, i) * buf.getSample(0, i); }
+      }
+      rms_ratio = std::sqrt(out_sq / std::max(in_sq, 1e-12)) / 0.5012;   // plugin volume default is -6 dB
+      // Spectrum via dsp::FFT, 16384 points, Hann.
+      const int N = 16384;
+      std::vector<double> re(N, 0.0), im(N, 0.0), data(N, 0.0);
+      for (int i = 0; i < N && i < (int) out.size(); ++i)
+        re[i] = out[i] * (0.5 - 0.5 * std::cos(2.0 * MathConstants<double>::pi * i / N));
+      for (int i = 1, j = 0; i < N; ++i) {   // in-place radix-2 FFT
+        int bit = N >> 1;
+        for (; j & bit; bit >>= 1) j ^= bit;
+        j ^= bit;
+        if (i < j) std::swap(re[i], re[j]);
+      }
+      for (int len = 2; len <= N; len <<= 1) {
+        double ang = -2.0 * MathConstants<double>::pi / len;
+        for (int i = 0; i < N; i += len)
+          for (int k = 0; k < len / 2; ++k) {
+            double wr = std::cos(ang * k), wi = std::sin(ang * k);
+            double xr = re[i + k + len / 2] * wr - im[i + k + len / 2] * wi, xi = re[i + k + len / 2] * wi + im[i + k + len / 2] * wr;
+            re[i + k + len / 2] = re[i + k] - xr; im[i + k + len / 2] = im[i + k] - xi;
+            re[i + k] += xr; im[i + k] += xi;
+          }
+      }
+      for (int k = 0; k < N; ++k) data[k] = std::sqrt(re[k] * re[k] + im[k] * im[k]);
+      int peak = 1; double sum = 0, wsum = 0;
+      for (int k = 1; k < N / 2; ++k) {
+        if (data[k] > data[peak]) peak = k;
+        double f = k * 48000.0 / N; if (f > 100 && f < 10000) { sum += data[k] * data[k]; wsum += f * data[k] * data[k]; }
+      }
+      centroid = sum > 0 ? wsum / sum : 0;
+      return peak * 48000.0 / N;
+    };
+
+    const char* names[] = { "granular", "mb-granular", "retro", "spectral" };
+    for (int m = 0; m < 4; ++m) {
+      double c, r;
+      double f = run(m, 0.0f, 0.0f, false, 440.0, false, c, r);
+      std::printf("      %-11s 0 st:  peak %.1f Hz, level ratio %.3f\n", names[m], f, r);
+      CHECK(std::abs(f - 440.0) < 6.0 && r > 0.8 && r < 1.2, (String(names[m]) + ": 0 st is transparent").toRawUTF8());
+      for (float st : { 7.0f, -5.0f, 12.0f }) {
+        f = run(m, st, 0.0f, false, 440.0, false, c, r);
+        double expect = 440.0 * std::pow(2.0, st / 12.0);
+        std::printf("      %-11s %+.0f st: peak %.1f Hz (expect %.1f), level ratio %.3f\n", names[m], st, f, expect, r);
+        CHECK(std::abs(f - expect) < expect * 0.012 + 3.0 && r > 0.15 && r < 2.5, (String(names[m]) + ": shifts by the requested interval").toRawUTF8());
+      }
+    }
+    // Formants: shift a vowel up 7 st. Auto formant keeps the spectral envelope (centroid stays near the original);
+    // formant control with +12 st moves the envelope up.
+    for (int m : { 0, 1, 3 }) {
+      double c0, c_auto, c_up, c_off, r;
+      run(m, 0.0f, 0.0f, false, 150.0, true, c0, r);
+      run(m, 7.0f, 0.0f, false, 150.0, true, c_auto, r);
+      run(m, 7.0f, 12.0f, true, 150.0, true, c_up, r);
+      run(m, 7.0f, 0.0f, true, 150.0, true, c_off, r);
+      std::printf("      %-11s vowel centroid: original %.0f, +7 st auto %.0f, +7 st formant 0 %.0f, +7 st formant +12 %.0f Hz\n", names[m], c0, c_auto, c_off, c_up);
+      CHECK(std::abs(c_auto / c0 - 1.0) < 0.25, (String(names[m]) + ": auto formant keeps the vowel envelope").toRawUTF8());
+      CHECK(c_up > c_auto * 1.2, (String(names[m]) + ": formant +12 st moves the envelope up").toRawUTF8());
+    }
+    std::printf(failures ? "\n%d FAILURE(S)\n" : "\nALL CHECKS PASSED\n", failures);
+    return failures ? 1 : 0;
   }
 
   if (keytrack_test) {
@@ -212,7 +314,7 @@ int main(int argc, char** argv) {
   }
 
   // Dry/wet at 0 must be (nearly) transparent for non-delay-based effects after settling.
-  if (mix) {
+  if (mix && !found[0]->name.containsIgnoreCase("pitch")) {   // impulse-tail heuristic; meaningless for a pitch shifter
     mix->setValue(0.0f);
     render(true, tail, in, out, finite);
     std::printf("      mix=0 tail=%.6f\n", tail);

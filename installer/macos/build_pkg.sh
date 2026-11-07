@@ -4,11 +4,11 @@
 set -euo pipefail
 SRC="$(cd "$1" && pwd)"; OUT="$(cd "$2" && pwd)"; VERSION="${3:-0.1.0}"
 WORK="$(mktemp -d)"
-EFFECTS=(Chorus Compressor Delay Distortion EQ Filter Flanger Phaser Reverb)
+EFFECTS=(Chorus Compressor Delay Distortion EQ Filter Flanger Phaser Reverb "Pitch Shifter")
 mkdir -p "$WORK/pkgs" "$WORK/resources"
 cp "$SRC/LICENSE" "$WORK/resources/LICENSE.txt"
 
-lower() { echo "$1" | tr '[:upper:]' '[:lower:]'; }
+lower() { echo "$1" | tr '[:upper:]' '[:lower:]' | tr -d ' '; }
 
 build_component() {  # format ext dest
   local fmt="$1" ext="$2" dest="$3" e id root

@@ -26,7 +26,7 @@ jobs:
       - name: Configure
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build all nine plugins
+      - name: Build all ten plugins
         run: cmake --build build
 
       - name: Load every plugin in a test host
@@ -36,6 +36,12 @@ jobs:
             xvfb-run -a -s "-screen 0 1280x800x24 +extension GLX" \
               build/vialfx_host_test_artefacts/Release/vialfx_host_test "$p"
           done
+
+      - name: Pitch Shifter accuracy (measured pitch and formants per mode)
+        run: |
+          xvfb-run -a -s "-screen 0 1280x800x24 +extension GLX" \
+            build/vialfx_host_test_artefacts/Release/vialfx_host_test \
+            "build/plugins/PitchShifter_artefacts/Release/VST3/Vial Pitch Shifter.vst3" --pitch
 
       - name: Collect bundle
         run: |
@@ -60,7 +66,7 @@ jobs:
       - name: Configure
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DVITALFX_BUILD_TESTS=OFF
 
-      - name: Build all nine plugins
+      - name: Build all ten plugins
         run: cmake --build build
 
       - name: Collect bundle
@@ -101,7 +107,7 @@ jobs:
       - name: Configure (universal x86_64 + arm64)
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DVITALFX_BUILD_TESTS=OFF
 
-      - name: Build all nine plugins
+      - name: Build all ten plugins
         run: cmake --build build
 
       - name: Ad-hoc sign and collect bundle

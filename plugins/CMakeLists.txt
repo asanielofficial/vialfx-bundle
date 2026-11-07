@@ -42,7 +42,10 @@ set(VITALFX_ONLY "" CACHE STRING "Limit the build to these plugin targets (defau
 
 # vitalfx_add_plugin(NAME <target> EFFECT <EffectKind index> CODE <4 chars> [WIDTH n] [HEIGHT n])
 function(vitalfx_add_plugin)
-  cmake_parse_arguments(P "" "NAME;EFFECT;CODE;WANTS_MIDI" "" ${ARGN})
+  cmake_parse_arguments(P "" "NAME;EFFECT;CODE;WANTS_MIDI;PRODUCT" "" ${ARGN})
+  if(NOT P_PRODUCT)
+    set(P_PRODUCT "${P_NAME}")
+  endif()
   if(VITALFX_ONLY AND NOT "${P_NAME}" IN_LIST VITALFX_ONLY)
     return()
   endif()
@@ -58,7 +61,7 @@ function(vitalfx_add_plugin)
     PLUGIN_MANUFACTURER_CODE VtFx
     PLUGIN_CODE ${P_CODE}
     FORMATS ${VITALFX_FORMATS}
-    PRODUCT_NAME "Vial ${P_NAME}"
+    PRODUCT_NAME "Vial ${P_PRODUCT}"
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT ${midi}
     NEEDS_MIDI_OUTPUT FALSE
@@ -129,3 +132,4 @@ vitalfx_add_plugin(NAME Filter     EFFECT 5 CODE VfFl WANTS_MIDI TRUE)
 vitalfx_add_plugin(NAME Flanger    EFFECT 6 CODE VfFg)
 vitalfx_add_plugin(NAME Phaser     EFFECT 7 CODE VfPh)
 vitalfx_add_plugin(NAME Reverb     EFFECT 8 CODE VfRv)
+vitalfx_add_plugin(NAME PitchShifter EFFECT 9 CODE VfPs PRODUCT "Pitch Shifter")

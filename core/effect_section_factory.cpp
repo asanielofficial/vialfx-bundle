@@ -9,6 +9,7 @@
 #include "filter_section.h"
 #include "flanger_section.h"
 #include "phaser_section.h"
+#include "pitch_shifter_section.h"
 #include "reverb_section.h"
 
 namespace vitalfx {
@@ -24,6 +25,7 @@ std::unique_ptr<SynthSection> createEffectSection(EffectKind kind, const vital::
     case EffectKind::kFlanger:    return std::make_unique<FlangerSection>("FLANGER", mono);
     case EffectKind::kPhaser:     return std::make_unique<PhaserSection>("PHASER", mono);
     case EffectKind::kReverb:     return std::make_unique<ReverbSection>("REVERB", mono);
+    case EffectKind::kPitchShifter: return std::make_unique<PitchShifterSection>("PITCH SHIFTER");
   }
   return nullptr;
 }

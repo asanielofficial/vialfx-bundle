@@ -102,6 +102,7 @@ double EffectPlugin::getTailLengthSeconds() const {
     case EffectKind::kChorus:
     case EffectKind::kFlanger:
     case EffectKind::kPhaser: return 2.0;
+    case EffectKind::kPitchShifter: return 0.5;
     default: return 0.0;
   }
 }
@@ -135,7 +136,7 @@ void EffectPlugin::processBlock(AudioBuffer<float>& buffer, MidiBuffer& midi_mes
   // Make sure only this plugin's effect runs, whatever a loaded preset says about the others.
   {
     const EffectInfo& mine = vitalfx::thisEffect();
-    for (int k = 0; k < 9; ++k) {
+    for (int k = 0; k < vital::constants::kNumEffects; ++k) {
       const EffectInfo& other = vitalfx::getEffectInfo(static_cast<EffectKind>(k));
       if (&other != &mine) {
         auto it = controls_.find(other.on_control);

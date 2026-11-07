@@ -8,7 +8,7 @@
 
 namespace vitalfx {
 
-enum class EffectKind { kChorus, kCompressor, kDelay, kDistortion, kEq, kFilter, kFlanger, kPhaser, kReverb };
+enum class EffectKind { kChorus, kCompressor, kDelay, kDistortion, kEq, kFilter, kFlanger, kPhaser, kReverb, kPitchShifter };
 
 struct EffectInfo {
   EffectKind kind;
@@ -31,6 +31,7 @@ inline const EffectInfo& getEffectInfo(EffectKind kind) {
     { EffectKind::kFlanger,    "Flanger",    "FLANGER",    "flanger_",    "flanger_on",    "Flanger",    false },
     { EffectKind::kPhaser,     "Phaser",     "PHASER",     "phaser_",     "phaser_on",     "Phaser",     false },
     { EffectKind::kReverb,     "Reverb",     "REVERB",     "reverb_",     "reverb_on",     "Reverb",     false },
+    { EffectKind::kPitchShifter, "Pitch Shifter", "PITCH SHIFTER", "pitch_shifter_", "pitch_shifter_on", "Pitch Shifter", false },
   };
   return kInfos[static_cast<int>(kind)];
 }

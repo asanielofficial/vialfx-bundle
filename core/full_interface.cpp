@@ -123,9 +123,9 @@ Point<int> FullInterface::getDesignSize() {
   const float padding = skin.getValue(Skin::kPadding);
   const float section_height = 2.0f * knob_section - widget_margin;
   const float height = kTopHeight + padding + section_height + large_padding;
-  // The Tremolo has two extra unit selectors, so its window is a little wider than the others.
-  const float width = vitalfx::thisEffect().kind == vitalfx::EffectKind::kTremolo ? kTremoloDesignWidth : kDesignWidth;
-  return Point<int>(static_cast<int>(width), static_cast<int>(std::ceil(height)));
+  // The Tremolo has two extra unit selectors under its knobs, so its window is a little taller than the others.
+  const int extra = vitalfx::thisEffect().kind == vitalfx::EffectKind::kTremolo ? kTremoloExtraHeight : 0;
+  return Point<int>(static_cast<int>(kDesignWidth), static_cast<int>(std::ceil(height)) + extra);
 }
 
 void FullInterface::paintBackground(Graphics& g) {
@@ -262,7 +262,8 @@ void FullInterface::resized() {
 
   const int knob_section_height = getKnobSectionHeight();
   const int widget_margin = findValue(Skin::kWidgetMargin);
-  const int section_height = 2 * knob_section_height - widget_margin;
+  const int extra_height = vitalfx::thisEffect().kind == vitalfx::EffectKind::kTremolo ? kTremoloExtraHeight * ratio : 0;
+  const int section_height = 2 * knob_section_height - widget_margin + extra_height;
   Rectangle<int> section_bounds(left + large_padding, top + top_height + padding,
                                 width - 2 * large_padding, section_height);
   effect_section_->setBounds(section_bounds);

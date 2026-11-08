@@ -136,7 +136,7 @@ class TremoloMeter : public OpenGlMultiQuad {
 };
 
 namespace {
-  constexpr float kDesignW = 640.0f, kDesignH = 136.5f;   // section size at the Tremolo's window size
+  constexpr float kDesignW = 580.0f, kDesignH = 166.5f;   // section size at the Tremolo's window size (30 taller than the others)
 }
 
 TremoloSection::TremoloSection(String name) : SynthSection(name) {
@@ -195,8 +195,8 @@ void TremoloSection::paintBackground(Graphics& g) {
 
   // Dark panel behind the graph.
   g.setColour(findColour(Skin::kWidgetBackground, true));
-  g.fillRoundedRectangle(std::round(491.0f * ratio_x), std::round(7.0f * ratio_y), std::round(115.0f * ratio_x),
-                         std::round(125.0f * ratio_y), findValue(Skin::kWidgetRoundedCorner) * 1.5f);
+  g.fillRoundedRectangle(std::round(409.0f * ratio_x), std::round(7.0f * ratio_y), std::round(127.0f * ratio_x),
+                         std::round(155.0f * ratio_y), findValue(Skin::kWidgetRoundedCorner) * 1.5f);
 
   drawTextComponentBackground(g, mod_a_->getBounds(), true);
   drawTextComponentBackground(g, mod_b_->getBounds(), true);
@@ -216,7 +216,7 @@ void TremoloSection::layoutKnobs() {
     return Rectangle<int>(std::round(x * ratio_x), std::round(y * ratio_y),
                           std::round(w * ratio_x), std::round(h * ratio_y));
   };
-  Rectangle<int> slot_a = rect(46.0f, 42.0f, 84.0f, 60.0f), slot_b = rect(272.0f, 42.0f, 84.0f, 60.0f);
+  Rectangle<int> slot_a = rect(37.0f, 65.5f, 84.0f, 65.5f), slot_b = rect(220.0f, 65.5f, 84.0f, 65.5f);
   SynthSlider* visible_a = visibleRate(true);
   SynthSlider* visible_b = visibleRate(false);
   for (SynthSlider* s : { rate_a_.get(), tempo_a_.get() })
@@ -232,14 +232,14 @@ void TremoloSection::resized() {
                           std::round(w * ratio_x), std::round(h * ratio_y));
   };
 
-  mod_a_->setBounds(rect(37.0f, 6.0f, 218.0f, 36.0f));
-  mod_b_->setBounds(rect(263.0f, 6.0f, 218.0f, 36.0f));
-  amount_a_->setBounds(rect(162.0f, 42.0f, 84.0f, 60.0f));
-  amount_b_->setBounds(rect(388.0f, 42.0f, 84.0f, 60.0f));
-  unit_a_->setBounds(rect(37.0f, 104.0f, 218.0f, 27.0f));
-  unit_b_->setBounds(rect(263.0f, 104.0f, 218.0f, 27.0f));
-  viewer_->setBounds(rect(491.0f, 7.0f, 115.0f, 125.0f));
-  meter_->setBounds(rect(618.0f, 19.0f, 14.0f, 100.0f));
+  mod_a_->setBounds(rect(37.0f, 6.0f, 175.0f, 60.0f));
+  mod_b_->setBounds(rect(220.0f, 6.0f, 173.0f, 60.0f));
+  amount_a_->setBounds(rect(128.0f, 65.5f, 84.0f, 65.5f));
+  amount_b_->setBounds(rect(310.0f, 65.5f, 84.0f, 65.5f));
+  unit_a_->setBounds(rect(37.0f, 134.0f, 175.0f, 26.0f));
+  unit_b_->setBounds(rect(220.0f, 134.0f, 173.0f, 26.0f));
+  viewer_->setBounds(rect(409.0f, 7.0f, 127.0f, 155.0f));
+  meter_->setBounds(rect(551.0f, 19.0f, 14.0f, 130.0f));
 
   SynthSection::resized();
   layoutKnobs();

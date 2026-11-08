@@ -23,8 +23,8 @@ namespace vital {
     vibrato_->plug(createMonoModControl("vibrato_tempo_b"), Vibrato::kTempoB);
     vibrato_->plug(createBaseControl("vibrato_mod_a"), Vibrato::kModA);
     vibrato_->plug(createBaseControl("vibrato_mod_b"), Vibrato::kModB);
-    vibrato_->plug(createBaseControl("vibrato_sync_a"), Vibrato::kSyncA);
-    vibrato_->plug(createBaseControl("vibrato_sync_b"), Vibrato::kSyncB);
+    vibrato_->plug(createBaseControl("vibrato_unit_a"), Vibrato::kUnitA);
+    vibrato_->plug(createBaseControl("vibrato_unit_b"), Vibrato::kUnitB);
     vibrato_->plug(beats_per_second_, Vibrato::kBeatsPerSecond);
 
     createStatusOutput("vibrato_cents", vibrato_->output(Vibrato::kCents));

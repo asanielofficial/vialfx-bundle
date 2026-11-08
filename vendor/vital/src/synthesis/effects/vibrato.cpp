@@ -58,9 +58,9 @@ namespace vital {
     }
   }
 
-  float Vibrato::rateHz(int rate_input, int sync_input, int tempo_input) const {
+  float Vibrato::rateHz(int rate_input, int unit_input, int tempo_input) const {
     float hz;
-    if (input(sync_input)->at(0)[0] >= 0.5f) {
+    if (input(unit_input)->at(0)[0] >= 0.5f) {
       float index = std::min(std::max(input(tempo_input)->at(0)[0], 0.0f),
                              static_cast<float>(constants::kNumSyncedFrequencyRatios - 1));
       hz = constants::kSyncedFrequencyRatios[static_cast<int>(index + 0.3f)] * input(kBeatsPerSecond)->at(0)[0];
@@ -79,7 +79,7 @@ namespace vital {
     const float sample_rate = static_cast<float>(getSampleRate());
     const int type_a = std::min(std::max(static_cast<int>(input(kModA)->at(0)[0] + 0.5f), 0), 5);
     const int type_b = std::min(std::max(static_cast<int>(input(kModB)->at(0)[0] + 0.5f), 0), 5);
-    const float target_rate_a = rateHz(kRateA, kSyncA, kTempoA), target_rate_b = rateHz(kRateB, kSyncB, kTempoB);
+    const float target_rate_a = rateHz(kRateA, kUnitA, kTempoA), target_rate_b = rateHz(kRateB, kUnitB, kTempoB);
     const float target_amount_a = std::min(std::max(input(kAmountA)->at(0)[0], 0.0f), 1200.0f);
     const float target_amount_b = std::min(std::max(input(kAmountB)->at(0)[0], 0.0f), 1200.0f);
     const float smooth = 1.0f - std::exp(-1.0f / (0.02f * sample_rate));

@@ -414,7 +414,7 @@ int main(int argc, char** argv) {
     };
     auto *mod_a = find("Vibrato Mod Type A"), *mod_b = find("Vibrato Mod Type B"), *rate_a = find("Vibrato Rate A"),
          *rate_b = find("Vibrato Rate B"), *amt_a = find("Vibrato Amount A"), *amt_b = find("Vibrato Amount B"),
-         *sync_a = find("Vibrato Rate A Sync");
+         *sync_a = find("Vibrato Rate A Unit");
     CHECK(mod_a && mod_b && rate_a && rate_b && amt_a && amt_b && sync_a, "vibrato parameters found");
     if (!(mod_a && mod_b && rate_a && rate_b && amt_a && amt_b && sync_a)) return 1;
     const int block = 512;

@@ -314,7 +314,7 @@ namespace strings {
     "Tremolo",
   };
 
-  const std::string kTremoloUnitNames[] = {
+  const std::string kRateUnitNames[] = {
     "Hz", "Tempo"
   };
 

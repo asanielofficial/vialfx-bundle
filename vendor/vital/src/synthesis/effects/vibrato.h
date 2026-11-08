@@ -18,8 +18,8 @@ namespace vital {
         kModB,
         kRateA,          // Hz
         kRateB,
-        kSyncA,          // 0 free (Hz), 1 tempo
-        kSyncB,
+        kUnitA,          // 0 Hz, 1 tempo
+        kUnitB,
         kTempoA,         // index into kSyncedFrequencyRatios
         kTempoB,
         kAmountA,        // cents (peak)
@@ -60,7 +60,7 @@ namespace vital {
         void reset(unsigned int s) { phase = 0.0f; prev = 0.0f; seed = s; next = rand(); }
       };
 
-      float rateHz(int rate_input, int sync_input, int tempo_input) const;
+      float rateHz(int rate_input, int unit_input, int tempo_input) const;
       void allocate();
 
       Lfo lfo_a_, lfo_b_;

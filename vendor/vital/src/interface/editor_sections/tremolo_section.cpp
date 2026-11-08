@@ -136,7 +136,7 @@ class TremoloMeter : public OpenGlMultiQuad {
 };
 
 namespace {
-  constexpr float kDesignW = 580.0f, kDesignH = 180.5f;   // section size at the Tremolo's window size (44 taller than the others)
+  constexpr float kTremoloW = 580.0f, kTremoloH = 180.5f;   // section size at the Tremolo's window size (44 taller than the others)
 }
 
 TremoloSection::TremoloSection(String name) : SynthSection(name) {
@@ -149,8 +149,8 @@ TremoloSection::TremoloSection(String name) : SynthSection(name) {
   };
   selector(mod_a_, "tremolo_mod_a", strings::kVibratoModNames);
   selector(mod_b_, "tremolo_mod_b", strings::kVibratoModNames);
-  selector(unit_a_, "tremolo_unit_a", strings::kTremoloUnitNames);
-  selector(unit_b_, "tremolo_unit_b", strings::kTremoloUnitNames);
+  selector(unit_a_, "tremolo_unit_a", strings::kRateUnitNames);
+  selector(unit_b_, "tremolo_unit_b", strings::kRateUnitNames);
 
   auto knob = [&](std::unique_ptr<SynthSlider>& slider, const char* param) {
     slider = std::make_unique<SynthSlider>(param);
@@ -191,7 +191,7 @@ void TremoloSection::paintBackground(Graphics& g) {
   SynthSection::paintBackground(g);
   setLabelFont(g);
 
-  const float ratio_x = getWidth() / kDesignW, ratio_y = getHeight() / kDesignH;
+  const float ratio_x = getWidth() / kTremoloW, ratio_y = getHeight() / kTremoloH;
 
   // Dark panel behind the graph.
   g.setColour(findColour(Skin::kWidgetBackground, true));
@@ -213,7 +213,7 @@ void TremoloSection::paintBackground(Graphics& g) {
 }
 
 void TremoloSection::layoutKnobs() {
-  const float ratio_x = getWidth() / kDesignW, ratio_y = getHeight() / kDesignH;
+  const float ratio_x = getWidth() / kTremoloW, ratio_y = getHeight() / kTremoloH;
   auto rect = [&](float x, float y, float w, float h) {
     return Rectangle<int>(std::round(x * ratio_x), std::round(y * ratio_y),
                           std::round(w * ratio_x), std::round(h * ratio_y));
@@ -228,7 +228,7 @@ void TremoloSection::layoutKnobs() {
 }
 
 void TremoloSection::resized() {
-  const float ratio_x = getWidth() / kDesignW, ratio_y = getHeight() / kDesignH;
+  const float ratio_x = getWidth() / kTremoloW, ratio_y = getHeight() / kTremoloH;
   auto rect = [&](float x, float y, float w, float h) {
     return Rectangle<int>(std::round(x * ratio_x), std::round(y * ratio_y),
                           std::round(w * ratio_x), std::round(h * ratio_y));

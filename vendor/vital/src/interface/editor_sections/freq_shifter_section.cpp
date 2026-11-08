@@ -66,6 +66,15 @@ FreqShifterSection::FreqShifterSection(String name) : SynthSection(name) {
   unit_->setLookAndFeel(TextLookAndFeel::instance());
   unit_->setLongStringLookup(strings::kFreqShifterUnitNames);
 
+  quality_ = std::make_unique<TextSelector>("freq_shifter_quality");
+  addSlider(quality_.get());
+  quality_->setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
+  quality_->setLookAndFeel(TextLookAndFeel::instance());
+  quality_->setLongStringLookup(strings::kFreqShifterQualityNames);
+  quality_->setTooltip("Type of filter being used:\nRough: 6-pole Hilbert, closer to analog devices\n"
+                       "Normal: 12-pole Hilbert\nBetter: 18-pole Hilbert\n"
+                       "Excellent: 24-pole Hilbert, with higher accuracy and more phase smearing");
+
   stereo_ = std::make_unique<SynthSlider>("freq_shifter_stereo");
   addSlider(stereo_.get());
   stereo_->setSliderStyle(Slider::LinearBar);
@@ -123,7 +132,9 @@ void FreqShifterSection::paintBackground(Graphics& g) {
   g.fillRoundedRectangle(pill, pill.getHeight() * 0.5f);
 
   drawTextComponentBackground(g, unit_->getBounds(), true);
+  drawTextComponentBackground(g, quality_->getBounds(), true);
   drawLabelForComponent(g, TRANS("UNIT"), unit_.get(), true);
+  drawLabelForComponent(g, TRANS("QUALITY"), quality_.get(), true);
   drawLabelForComponent(g, TRANS("SHIFT"), shift_.get());
   drawLabelBackgroundForComponent(g, visibleRange());
   // Label under the slider: the helpers place a label at the bottom of a knob-sized box, so use one that ends below the bar.
@@ -151,7 +162,8 @@ void FreqShifterSection::resized() {
                           std::round(w * ratio_x), std::round(h * ratio_y));
   };
 
-  shift_->setBounds(rect(62.0f, 24.0f, 84.0f, 70.0f));
+  shift_->setBounds(rect(62.0f, 10.0f, 84.0f, 66.0f));
+  quality_->setBounds(rect(55.0f, 84.0f, 98.0f, 42.0f));
   unit_->setBounds(rect(180.0f, 88.0f, 95.0f, 42.0f));
   stereo_->setBounds(rect(304.0f, 13.0f, 148.0f, 24.0f));
   allpass_->setBounds(rect(500.0f, 13.0f, 57.0f, 24.0f));

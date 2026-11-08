@@ -8,23 +8,40 @@
 
 namespace vital {
 
+  // Polyphase all-pass coefficients (a2 of each z^-2 section) for 6/12/18/24 pole Hilbert pairs, ascending;
+  // even entries form the real (fast) chain, odd entries the imaginary (slow) chain. Elliptic half-band design.
+  static const float kHilbertCoefs[4][24] = {
+    { 0.161706483f, 0.479394679f, 0.733435564f, 0.877692791f, 0.949293770f, 0.986297829f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },   // 6 poles, transition 0.0050 fs
+    { 0.069378339f, 0.242674540f, 0.447819049f, 0.628616430f, 0.763524572f, 0.854654604f, 0.912671677f, 0.948383257f, 0.970031323f, 0.983210194f, 0.991548564f, 0.997429966f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },   // 12 poles, transition 0.0015 fs
+    { 0.036425986f, 0.135642378f, 0.272934097f, 0.420702718f, 0.558012756f, 0.673774854f, 0.765057319f, 0.833777900f, 0.883883607f, 0.919625640f, 0.944751153f, 0.962252939f, 0.974391528f, 0.982819827f, 0.988726604f, 0.992965085f, 0.996157734f, 0.998779040f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },   // 18 poles, transition 0.0010 fs
+    { 0.026612399f, 0.101002259f, 0.209064978f, 0.333284413f, 0.457936561f, 0.572061753f, 0.669928688f, 0.749948511f, 0.813134299f, 0.861771904f, 0.898521786f, 0.925917450f, 0.946142082f, 0.960969454f, 0.971787675f, 0.979656439f, 0.985371426f, 0.989523691f, 0.992549621f, 0.994770915f, 0.996425708f, 0.997692489f, 0.998708508f, 0.999584052f },   // 24 poles, transition 0.0004 fs
+  };
+
   FreqShifter::Hilbert::Hilbert() {
-    static const float a[4] = { 0.6923878f, 0.9360654322959f, 0.9882295226860f, 0.9987488452737f };
-    static const float b[4] = { 0.4021921162426f, 0.8561710882420f, 0.9722909545651f, 0.9952884791278f };
-    for (int i = 0; i < 4; ++i) {
-      slow[i].a2 = a[i] * a[i];
-      fast[i].a2 = b[i] * b[i];
+    setQuality(1);
+  }
+
+  void FreqShifter::Hilbert::setQuality(int new_quality) {
+    new_quality = std::min(std::max(new_quality, 0), 3);
+    if (new_quality == quality)
+      return;
+    quality = new_quality;
+    sections = 3 * (new_quality + 1);   // per chain: 3, 6, 9, 12 (6, 12, 18, 24 poles in total)
+    for (int i = 0; i < sections; ++i) {
+      fast[i].a2 = kHilbertCoefs[quality][2 * i];
+      slow[i].a2 = kHilbertCoefs[quality][2 * i + 1];
     }
+    reset();
   }
 
   void FreqShifter::Hilbert::tick(float x, float& real, float& imag) {
     float u = delayed;
     delayed = x;
-    for (auto& stage : slow)
-      u = stage.tick(u);
+    for (int i = 0; i < sections; ++i)
+      u = slow[i].tick(u);
     float v = x;
-    for (auto& stage : fast)
-      v = stage.tick(v);
+    for (int i = 0; i < sections; ++i)
+      v = fast[i].tick(v);
     real = v;
     imag = u;
   }
@@ -82,6 +99,13 @@ namespace vital {
     return std::min(std::max(hz, 0.0f), 0.45f * getSampleRate());
   }
 
+  void FreqShifter::updateQuality(int quality) {
+    for (int c = 0; c < 2; ++c) {
+      main_[c].setQuality(quality);
+      feedback_shifter_[c].setQuality(quality);
+    }
+  }
+
   void FreqShifter::process(int num_samples) {
     processWithInput(input(kAudio)->source->buffer, num_samples);
   }
@@ -98,6 +122,7 @@ namespace vital {
     const float target_fb_dir = std::min(std::max(input(kFbDirection)->at(0)[0], -1.0f), 1.0f);
     const float target_feedback = std::min(std::max(input(kFeedback)->at(0)[0], -1.0f), 1.0f) * 0.95f;
     const float target_wet = std::min(std::max(input(kDryWet)->at(0)[0], 0.0f), 1.0f);
+    updateQuality(static_cast<int>(input(kQuality)->at(0)[0] + 0.5f));
     const bool use_allpass = input(kAllpass)->at(0)[0] >= 0.5f;
     const float smooth = 1.0f - std::exp(-1.0f / (0.02f * sample_rate));
 

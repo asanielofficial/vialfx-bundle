@@ -172,6 +172,8 @@ namespace vital {
       ValueDetails::kIndexed, false, "", "Freq Shifter Range (Tempo)", strings::kSyncedFrequencyNames },
     { "freq_shifter_keytrack_transpose", 0x000000, -60.0, 36.0, -12.0, 0.0, 1.0,
       ValueDetails::kLinear, false, " st", "Freq Shifter Range (Keytrack)", nullptr },
+    { "freq_shifter_quality", 0x000000, 0.0, 3.0, 1.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Freq Shifter Quality", strings::kFreqShifterQualityNames },
     { "freq_shifter_stereo", 0x000000, -1.0, 1.0, 0.0, 0.0, 100.0,
       ValueDetails::kLinear, false, "%", "Freq Shifter Stereo", nullptr },
     { "freq_shifter_allpass", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,

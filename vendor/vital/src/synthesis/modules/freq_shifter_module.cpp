@@ -26,6 +26,7 @@ namespace vital {
     shifter_->plug(createMonoModControl("freq_shifter_keytrack_transpose"), FreqShifter::kKeytrackTranspose);
     shifter_->plug(createBaseControl("freq_shifter_allpass"), FreqShifter::kAllpass);
     shifter_->plug(createBaseControl("freq_shifter_unit"), FreqShifter::kUnit);
+    shifter_->plug(createBaseControl("freq_shifter_quality"), FreqShifter::kQuality);
     shifter_->plug(beats_per_second_, FreqShifter::kBeatsPerSecond);
     shifter_->plug(keytrack_, FreqShifter::kMidi);
 

@@ -28,6 +28,7 @@ class FreqShifterSection : public SynthSection {
     std::unique_ptr<SynthButton> on_;
     std::unique_ptr<SynthSlider> shift_;
     std::unique_ptr<TextSelector> unit_;
+    std::unique_ptr<TextSelector> quality_;
     std::unique_ptr<SynthSlider> frequency_;
     std::unique_ptr<SynthSlider> period_;
     std::unique_ptr<SynthSlider> tempo_;

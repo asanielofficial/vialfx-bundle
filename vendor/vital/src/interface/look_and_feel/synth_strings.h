@@ -319,6 +319,10 @@ namespace strings {
     "Hertz", "Seconds", "Tempo", "Tempo Dotted", "Tempo Triplets", "Keytrack"
   };
 
+  const std::string kFreqShifterQualityNames[] = {
+    "Rough", "Normal", "Better", "Excellent"
+  };
+
   const std::string kPitchShifterModeNames[] = {
     "GRANULAR",
     "MB-GRANULAR",

@@ -24,6 +24,7 @@ namespace vital {
         kBeatsPerSecond,
         kMidi,            // keytrack note
         kKeytrackTranspose,
+        kQuality,         // 0 Rough (6 poles), 1 Normal (12), 2 Better (18), 3 Excellent (24)
         kNumInputs
       };
 
@@ -55,11 +56,15 @@ namespace vital {
         }
       };
 
-      // 90 degree phase splitter (Niemitalo's 8-section allpass pair).
+      // 90 degree phase splitter: a pair of all-pass chains with elliptic half-band coefficients.
       struct Hilbert {
-        Allpass2 slow[4], fast[4];
+        static constexpr int kMaxSections = 12;
+        Allpass2 slow[kMaxSections], fast[kMaxSections];
+        int sections = 6;
+        int quality = -1;
         float delayed = 0.0f;
         Hilbert();
+        void setQuality(int new_quality);
         void tick(float x, float& real, float& imag);
         void reset();
       };
@@ -80,6 +85,8 @@ namespace vital {
       float feedback_state_[2];
       double phase_[2], fb_phase_[2];
       float shift_hz_[2], fb_hz_[2];
+      void updateQuality(int quality);
+
       float wet_, feedback_, stereo_, shift_, fb_dir_, range_hz_;
   };
 } // namespace vital

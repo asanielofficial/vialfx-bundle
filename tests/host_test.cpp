@@ -317,16 +317,16 @@ int main(int argc, char** argv) {
     auto *shift = find("Freq Shifter Shift"), *unit = find("Freq Shifter Unit"), *range = find("Freq Shifter Range"),
          *period = find("Freq Shifter Range (Seconds)"), *stereo = find("Freq Shifter Stereo"),
          *feedback = find("Freq Shifter Feedback"), *fbdir = find("Freq Shifter Feedback Direction"),
-         *mix = find("Freq Shifter Mix");
-    CHECK(shift && unit && range && period && stereo && feedback && fbdir && mix, "freq shifter parameters found");
-    if (!(shift && unit && range && period && stereo && feedback && fbdir && mix)) return 1;
+         *mix = find("Freq Shifter Mix"), *quality = find("Freq Shifter Quality");
+    CHECK(shift && unit && range && period && stereo && feedback && fbdir && mix && quality, "freq shifter parameters found");
+    if (!(shift && unit && range && period && stereo && feedback && fbdir && mix && quality)) return 1;
     const int block = 512;
     plugin->setPlayConfigDetails(2, 2, 48000.0, block);
     plugin->prepareToPlay(48000.0, block);
     const double kVol = 0.5012;
     auto reset = [&]() {
       mix->setValue(1.0f); shift->setValue(0.5f); unit->setValue(0.0f); stereo->setValue(0.5f);
-      feedback->setValue(0.0f); fbdir->setValue(0.5f);
+      feedback->setValue(0.0f); fbdir->setValue(0.5f); quality->setValue(1.0f / 3.0f);
       range->setValue((float) (std::log2(400.0) / 13.0));
     };
     struct Out { std::vector<float> l, r; };
@@ -379,6 +379,17 @@ int main(int argc, char** argv) {
     Out st = play(1000);
     std::printf("      stereo +100%%: L 1100 Hz %.4f, R 900 Hz %.4f\n", amp(st.l, 1100), amp(st.r, 900));
     CHECK(amp(st.l, 1100) > 0.9 * in_amp && amp(st.r, 900) > 0.9 * in_amp, "stereo offset shifts the channels in opposite directions");
+
+    // Quality (pole count): every setting must shift correctly; image rejection improves with more poles.
+    const double limits[4] = { 0.15, 0.05, 0.02, 0.02 };
+    const char* names[4] = { "Rough", "Normal", "Better", "Excellent" };
+    for (int q = 0; q < 4; ++q) {
+      reset(); quality->setValue(q / 3.0f); shift->setValue(0.75f);
+      Out hi = play(1000);
+      double main_hi = amp(hi.l, 1200) / in_amp, image_hi = amp(hi.l, 800) / in_amp;
+      std::printf("      quality %-9s: 1 kHz -> 1200 Hz %.3f, image 800 Hz %.4f\n", names[q], main_hi, image_hi);
+      CHECK(std::abs(main_hi - 1.0) < 0.05 && image_hi < limits[q], "quality setting shifts with acceptable image rejection");
+    }
 
     reset(); feedback->setValue(1.0f);
     Out fb = play(1000);

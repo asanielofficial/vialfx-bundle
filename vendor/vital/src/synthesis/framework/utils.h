@@ -31,8 +31,8 @@ namespace vital {
     constexpr mono_float kLogOf2 = 0.69314718056f;
     constexpr mono_float kInvLogOf2 = 1.44269504089f;
 
-    constexpr int factorial(int value) {
-      int result = 1;
+    constexpr long long factorial(int value) {   // 13! does not fit in an int
+      long long result = 1;
       for (int i = 2; i <= value; ++i)
         result *= i;
 

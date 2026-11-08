@@ -28,6 +28,7 @@ int main(int argc, char** argv) {
   const bool pitch_test = argc > 2 && String(argv[2]) == "--pitch";   // pitch shifter: measured pitch per mode
   const bool utility_test = argc > 2 && String(argv[2]) == "--utility";   // utility: gain/pan/invert/swap/width/haas/mono bass
   const bool shifter_test = argc > 2 && String(argv[2]) == "--shifter";   // freq shifter: sideband, units, stereo, feedback
+  const bool vibrato_test = argc > 2 && String(argv[2]) == "--vibrato";   // vibrato: depth, rate, sum of A+B, bounded
   const bool editor_only = argc > 2 && String(argv[2]) == "--editor-only";   // keep window up ~15 s for screenshots
 
   AudioPluginFormatManager formats;
@@ -389,6 +390,95 @@ int main(int argc, char** argv) {
     peak = 0; for (float x : fd.l) peak = std::max(peak, (double) std::fabs(x));
     std::printf("      feedback 60%% with direction +100%%: peak %.3f\n", peak);
     CHECK(std::isfinite(peak) && peak < 2.0, "feedback direction stays bounded");
+
+    std::printf(failures ? "\n%d FAILURE(S)\n" : "\nALL CHECKS PASSED\n", failures);
+    return failures ? 1 : 0;
+  }
+
+  if (vibrato_test) {
+    auto find = [&](const char* name) -> AudioProcessorParameter* {
+      for (auto* p : params) if (p->getName(64).equalsIgnoreCase(name)) return p;
+      return nullptr;
+    };
+    auto *mod_a = find("Vibrato Mod Type A"), *mod_b = find("Vibrato Mod Type B"), *rate_a = find("Vibrato Rate A"),
+         *rate_b = find("Vibrato Rate B"), *amt_a = find("Vibrato Amount A"), *amt_b = find("Vibrato Amount B"),
+         *sync_a = find("Vibrato Rate A Sync");
+    CHECK(mod_a && mod_b && rate_a && rate_b && amt_a && amt_b && sync_a, "vibrato parameters found");
+    if (!(mod_a && mod_b && rate_a && rate_b && amt_a && amt_b && sync_a)) return 1;
+    const int block = 512;
+    plugin->setPlayConfigDetails(2, 2, 48000.0, block);
+    plugin->prepareToPlay(48000.0, block);
+    const double kVol = 0.5012;
+    auto hz = [](double f) { return (float) ((std::log2(f) + 3.0) / 8.4); };   // rate knob range -3..5.4 (log2 Hz)
+    auto reset = [&]() {
+      mod_a->setValue(0.0f); mod_b->setValue(0.0f); sync_a->setValue(0.0f);
+      rate_a->setValue(hz(5.0)); rate_b->setValue(hz(5.0));
+      amt_a->setValue(0.0f); amt_b->setValue(0.0f);
+    };
+    auto play = [&](double freq, int blocks) {
+      plugin->reset();
+      std::vector<float> out; MidiBuffer midi; AudioBuffer<float> buf(2, block);
+      double ph = 0;
+      for (int b = 0; b < blocks; ++b) {
+        for (int i = 0; i < block; ++i) {
+          float v = 0.4f * (float) std::sin(ph); ph += 2 * MathConstants<double>::pi * freq / 48000.0;
+          buf.setSample(0, i, v); buf.setSample(1, i, v);
+        }
+        plugin->processBlock(buf, midi);
+        if (b >= blocks - 190) for (int i = 0; i < block; ++i) out.push_back(buf.getSample(0, i));   // last ~2 s
+      }
+      return out;
+    };
+    auto amp = [](const std::vector<float>& v, double f) {
+      std::complex<double> a = 0; double w = 0; const int n = (int) v.size();
+      for (int i = 0; i < n; ++i) {
+        double h = 0.5 - 0.5 * std::cos(2 * MathConstants<double>::pi * i / n);
+        a += h * v[i] * std::polar(1.0, -2 * MathConstants<double>::pi * f * i / 48000.0); w += h;
+      }
+      return 2.0 * std::abs(a) / w;
+    };
+    const double in_amp = 0.4 * kVol;
+
+    reset();
+    auto n0 = play(1000, 260);
+    std::printf("      amount 0: 1 kHz amplitude %.4f (expect %.4f)\n", amp(n0, 1000), in_amp);
+    CHECK(std::abs(amp(n0, 1000) / in_amp - 1.0) < 0.05, "amount 0 passes the signal through");
+
+    // 10 cents at 5 Hz on 1 kHz: peak deviation 5.8 Hz, modulation index ~1.16 -> J0 = 0.69, J1 = 0.50.
+    reset(); amt_a->setValue(10.0f / 200.0f);
+    auto v1 = play(1000, 260);
+    double c = amp(v1, 1000) / in_amp, sb = 0.5 * (amp(v1, 1005) + amp(v1, 995)) / in_amp;
+    std::printf("      10 cents @5 Hz: carrier %.3f (expect ~0.69), sidebands %.3f (expect ~0.50)\n", c, sb);
+    CHECK(std::abs(c - 0.69) < 0.08 && std::abs(sb - 0.50) < 0.12, "10 cents at 5 Hz produces the expected FM spectrum");
+
+    // Doubling the rate moves the sidebands out; the index halves (J1(0.58) = 0.28).
+    reset(); amt_a->setValue(10.0f / 200.0f); rate_a->setValue(hz(10.0));
+    auto v2 = play(1000, 260);
+    double sb2 = 0.5 * (amp(v2, 1010) + amp(v2, 990)) / in_amp;
+    std::printf("      10 cents @10 Hz: sidebands at +-10 Hz %.3f (expect ~0.28)\n", sb2);
+    CHECK(std::abs(sb2 - 0.28) < 0.1 && amp(v2, 1005) / in_amp < 0.05, "rate sets the sideband spacing");
+
+    // A and B add: 5 cents + 5 cents, same type and rate, equals 10 cents.
+    reset(); amt_a->setValue(5.0f / 200.0f); amt_b->setValue(5.0f / 200.0f);
+    auto v3 = play(1000, 260);
+    double sb3 = 0.5 * (amp(v3, 1005) + amp(v3, 995)) / in_amp;
+    std::printf("      5 + 5 cents: sidebands %.3f (expect ~0.50)\n", sb3);
+    CHECK(std::abs(sb3 - 0.50) < 0.12, "modulators A and B add");
+
+    // Large depth on every shape must stay bounded and finite.
+    for (int type = 0; type < 6; ++type) {
+      reset(); mod_a->setValue(type / 5.0f); mod_b->setValue(((type + 3) % 6) / 5.0f);
+      amt_a->setValue(1.0f); amt_b->setValue(1.0f); rate_a->setValue(hz(30.0)); rate_b->setValue(hz(0.3));
+      auto v = play(300, 140);
+      double peak = 0; for (float x : v) peak = std::max(peak, (double) std::fabs(x));
+      CHECK(std::isfinite(peak) && peak < 0.6 && peak > 0.05, "extreme settings stay bounded and audible");
+    }
+
+    // Tempo sync switch must not break the output.
+    reset(); amt_a->setValue(0.25f); sync_a->setValue(1.0f);
+    auto v4 = play(1000, 140);
+    double peak4 = 0; for (float x : v4) peak4 = std::max(peak4, (double) std::fabs(x));
+    CHECK(std::isfinite(peak4) && peak4 > 0.1 && peak4 < 0.6, "tempo sync produces a stable output");
 
     std::printf(failures ? "\n%d FAILURE(S)\n" : "\nALL CHECKS PASSED\n", failures);
     return failures ? 1 : 0;

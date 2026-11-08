@@ -13,3 +13,4 @@
 #include "pitch_shifter_section.cpp"
 #include "utility_section.cpp"
 #include "freq_shifter_section.cpp"
+#include "vibrato_section.cpp"

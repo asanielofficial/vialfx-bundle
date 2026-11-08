@@ -1,0 +1,333 @@
+// VialFX - Vibrato section. Licensed under GPL-3.0-or-later.
+#include "vibrato_section.h"
+
+#include "fonts.h"
+#include "open_gl_line_renderer.h"
+#include "open_gl_multi_quad.h"
+#include "skin.h"
+#include "synth_button.h"
+#include "synth_gui_interface.h"
+#include "synth_slider.h"
+#include "synth_strings.h"
+#include "text_look_and_feel.h"
+#include "text_selector.h"
+#include "vibrato.h"
+
+#include <cmath>
+#include <vector>
+
+// LED dots at the left of the SYNC pills.
+class VibratoLeds : public OpenGlMultiQuad {
+  public:
+    VibratoLeds(std::vector<SynthButton*> buttons, bool on) :
+        OpenGlMultiQuad(2, Shaders::kCircleFragment), buttons_(buttons), on_(on) {
+      setTargetComponent(this);
+    }
+
+    void render(OpenGlWrapper& open_gl, bool animate) override {
+      const float w = getWidth(), h = getHeight();
+      if (w <= 0.0f || h <= 0.0f)
+        return;
+      int count = 0;
+      for (SynthButton* button : buttons_) {
+        if (button->getToggleState() != on_)
+          continue;
+        Rectangle<int> bounds = button->getBounds();
+        float led = std::round(bounds.getHeight() * 0.36f);
+        float x = bounds.getX() + std::round(bounds.getHeight() * 0.36f);
+        float y = bounds.getY() + std::round((bounds.getHeight() - led) * 0.5f);
+        setQuad(count++, 2.0f * x / w - 1.0f, 1.0f - 2.0f * (y + led) / h, 2.0f * led / w, 2.0f * led / h);
+      }
+      if (count == 0)
+        return;
+      setNumQuads(count);
+      setColor(on_ ? findColour(Skin::kIconButtonOn, true) : findColour(Skin::kIconButtonOff, true));
+      OpenGlMultiQuad::render(open_gl, animate);
+    }
+
+  private:
+    std::vector<SynthButton*> buttons_;
+    bool on_;
+};
+
+// Shape of the combined modulation (A + B) over two cycles of the slowest active modulator.
+class VibratoViewer : public OpenGlLineRenderer {
+  public:
+    static constexpr int kResolution = 160;
+
+    VibratoViewer() : OpenGlLineRenderer(kResolution), mod_a_(nullptr), mod_b_(nullptr), rate_a_(nullptr),
+                      rate_b_(nullptr), tempo_a_(nullptr), tempo_b_(nullptr), amount_a_(nullptr), amount_b_(nullptr),
+                      sync_a_(nullptr), sync_b_(nullptr) {
+      setFill(true);
+      setFillCenter(-1.0f);
+    }
+
+    void setControls(TextSelector* mod_a, TextSelector* mod_b, SynthSlider* rate_a, SynthSlider* rate_b,
+                     SynthSlider* tempo_a, SynthSlider* tempo_b, SynthSlider* amount_a, SynthSlider* amount_b,
+                     SynthButton* sync_a, SynthButton* sync_b) {
+      mod_a_ = mod_a; mod_b_ = mod_b; rate_a_ = rate_a; rate_b_ = rate_b; tempo_a_ = tempo_a; tempo_b_ = tempo_b;
+      amount_a_ = amount_a; amount_b_ = amount_b; sync_a_ = sync_a; sync_b_ = sync_b;
+    }
+
+    void render(OpenGlWrapper& open_gl, bool animate) override {
+      setLineWidth(findValue(Skin::kWidgetLineWidth) * 1.6f);
+      float fill_fade = findValue(Skin::kWidgetFillFade);
+
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      glEnable(GL_BLEND);
+      setViewPort(open_gl);
+
+      drawCurve();
+      Colour fill_to = findColour(Skin::kWidgetSecondary1, true);
+      setColor(findColour(Skin::kWidgetPrimary1, true));
+      setFillColors(fill_to.withMultipliedAlpha(1.0f - fill_fade), fill_to);
+      OpenGlLineRenderer::render(open_gl, animate);
+    }
+
+  private:
+    static float hash(int n) {
+      float s = std::sin(n * 12.9898f) * 43758.5453f;
+      return (s - std::floor(s)) * 2.0f - 1.0f;
+    }
+
+    float rateHz(SynthSlider* rate, SynthSlider* tempo, SynthButton* sync) const {
+      if (sync->getToggleState()) {   // assume 120 bpm for the picture
+        int index = std::min(std::max(static_cast<int>(tempo->getValue() + 0.3), 0), vital::constants::kNumSyncedFrequencyRatios - 1);
+        return std::max(vital::constants::kSyncedFrequencyRatios[index] * 2.0f, 0.01f);
+      }
+      return std::pow(2.0f, static_cast<float>(rate->getValue()));
+    }
+
+    float shape(int type, float cycles) const {
+      int index = static_cast<int>(std::floor(cycles));
+      float p = cycles - index;
+      float rnd_prev = hash(index), rnd_next = hash(index + 1);
+      return vital::Vibrato::wave(type, p, rnd_prev, rnd_next);
+    }
+
+    void drawCurve() {
+      const float width = getWidth(), height = getHeight();
+      if (!mod_a_)
+        return;
+      float amount_a = static_cast<float>(amount_a_->getValue()), amount_b = static_cast<float>(amount_b_->getValue());
+      float rate_a = rateHz(rate_a_, tempo_a_, sync_a_), rate_b = rateHz(rate_b_, tempo_b_, sync_b_);
+      int type_a = static_cast<int>(mod_a_->getValue()), type_b = static_cast<int>(mod_b_->getValue());
+      float wa = amount_a > 0.5f ? amount_a : 0.0f, wb = amount_b > 0.5f ? amount_b : 0.0f;
+      if (wa + wb <= 0.0f)
+        wa = 1.0f;
+      float slowest = wa > 0.0f && wb > 0.0f ? std::min(rate_a, rate_b) : (wa > 0.0f ? rate_a : rate_b);
+      const float duration = 2.0f / std::max(slowest, 0.01f);
+      for (int i = 0; i < kResolution; ++i) {
+        float t = duration * i / (kResolution - 1.0f);
+        float value = (wa * shape(type_a, rate_a * t + 0.0f) + wb * shape(type_b, rate_b * t + 0.0f)) / (wa + wb);
+        setXAt(i, width * i / (kResolution - 1.0f));
+        setYAt(i, height * (0.5f - 0.40f * value));
+      }
+    }
+
+    TextSelector *mod_a_, *mod_b_;
+    SynthSlider *rate_a_, *rate_b_, *tempo_a_, *tempo_b_, *amount_a_, *amount_b_;
+    SynthButton *sync_a_, *sync_b_;
+};
+
+// Vertical meter: current pitch deviation, centre = in tune, top = full upward bend.
+class VibratoMeter : public OpenGlMultiQuad {
+  public:
+    VibratoMeter() : OpenGlMultiQuad(1, Shaders::kRoundedRectangleFragment), parent_(nullptr), cents_(nullptr),
+                     amount_a_(nullptr), amount_b_(nullptr), smoothed_(0.5f) {
+      setTargetComponent(this);
+    }
+
+    void setAmounts(SynthSlider* a, SynthSlider* b) { amount_a_ = a; amount_b_ = b; }
+
+    void init(OpenGlWrapper& open_gl) override {
+      parent_ = findParentComponentOfClass<SynthGuiInterface>();
+      if (parent_ && parent_->getSynth())
+        cents_ = parent_->getSynth()->getStatusOutput("vibrato_cents");
+      OpenGlMultiQuad::init(open_gl);
+    }
+
+    void render(OpenGlWrapper& open_gl, bool animate) override {
+      const float h = getHeight();
+      if (h <= 0.0f)
+        return;
+      setRounding(findValue(Skin::kWidgetRoundedCorner) * 0.5f);
+
+      float cents = cents_ ? cents_->value()[0] : 0.0f;
+      float range = std::max(100.0f, amount_a_ ? static_cast<float>(amount_a_->getValue() + amount_b_->getValue()) : 100.0f);
+      float target = std::min(std::max(0.5f + 0.5f * cents / range, 0.0f), 1.0f);
+      smoothed_ += (target - smoothed_) * 0.35f;
+
+      setNumQuads(1);
+      setColor(findColour(Skin::kWidgetBackground, true));
+      setQuad(0, -1.0f, -1.0f, 2.0f, 2.0f);
+      OpenGlMultiQuad::render(open_gl, animate);
+
+      if (smoothed_ * h > 1.0f) {
+        setColor(findColour(Skin::kWidgetPrimary2, true));
+        setQuad(0, -1.0f, -1.0f, 2.0f, 2.0f * smoothed_);
+        OpenGlMultiQuad::render(open_gl, animate);
+      }
+    }
+
+  private:
+    SynthGuiInterface* parent_;
+    const vital::StatusOutput* cents_;
+    SynthSlider *amount_a_, *amount_b_;
+    float smoothed_;
+};
+
+VibratoSection::VibratoSection(String name) : SynthSection(name) {
+  auto selector = [&](std::unique_ptr<TextSelector>& s, const char* param) {
+    s = std::make_unique<TextSelector>(param);
+    addSlider(s.get());
+    s->setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
+    s->setLookAndFeel(TextLookAndFeel::instance());
+    s->setLongStringLookup(strings::kVibratoModNames);
+  };
+  selector(mod_a_, "vibrato_mod_a");
+  selector(mod_b_, "vibrato_mod_b");
+
+  auto knob = [&](std::unique_ptr<SynthSlider>& slider, const char* param) {
+    slider = std::make_unique<SynthSlider>(param);
+    addSlider(slider.get());
+    slider->setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
+  };
+  knob(rate_a_, "vibrato_rate_a");
+  knob(rate_b_, "vibrato_rate_b");
+  knob(tempo_a_, "vibrato_tempo_a");
+  knob(tempo_b_, "vibrato_tempo_b");
+  knob(amount_a_, "vibrato_amount_a");
+  knob(amount_b_, "vibrato_amount_b");
+
+  auto sync = [&](std::unique_ptr<SynthButton>& button, const char* param) {
+    button = std::make_unique<SynthButton>(param);
+    addButton(button.get());
+    button->setText(" ");        // non-empty so the button does not fall back to its parameter name
+    button->setNoBackground();   // the pill is drawn by the section, the LED by VibratoLeds
+  };
+  sync(sync_a_, "vibrato_sync_a");
+  sync(sync_b_, "vibrato_sync_b");
+
+  std::vector<SynthButton*> toggles = { sync_a_.get(), sync_b_.get() };
+  leds_on_ = std::make_unique<VibratoLeds>(toggles, true);
+  addOpenGlComponent(leds_on_.get());
+  leds_off_ = std::make_unique<VibratoLeds>(toggles, false);
+  addOpenGlComponent(leds_off_.get());
+
+  viewer_ = std::make_unique<VibratoViewer>();
+  viewer_->setControls(mod_a_.get(), mod_b_.get(), rate_a_.get(), rate_b_.get(), tempo_a_.get(), tempo_b_.get(),
+                       amount_a_.get(), amount_b_.get(), sync_a_.get(), sync_b_.get());
+  addOpenGlComponent(viewer_.get());
+
+  meter_ = std::make_unique<VibratoMeter>();
+  meter_->setAmounts(amount_a_.get(), amount_b_.get());
+  addOpenGlComponent(meter_.get());
+
+  on_ = std::make_unique<SynthButton>("vibrato_on");
+  addButton(on_.get());
+  setActivator(on_.get());
+  setSkinOverride(Skin::kVibrato);
+}
+
+VibratoSection::~VibratoSection() { }
+
+SynthSlider* VibratoSection::visibleRate(bool a) const {
+  SynthButton* sync = a ? sync_a_.get() : sync_b_.get();
+  if (sync->getToggleState())
+    return a ? tempo_a_.get() : tempo_b_.get();
+  return a ? rate_a_.get() : rate_b_.get();
+}
+
+void VibratoSection::paintBackground(Graphics& g) {
+  SynthSection::paintBackground(g);
+  setLabelFont(g);
+
+  const float ratio_x = getWidth() / 580.0f, ratio_y = getHeight() / 136.5f;
+
+  // Dark panel behind the graph.
+  g.setColour(findColour(Skin::kWidgetBackground, true));
+  g.fillRoundedRectangle(std::round(409.0f * ratio_x), std::round(7.0f * ratio_y), std::round(127.0f * ratio_x),
+                         std::round(125.0f * ratio_y), findValue(Skin::kWidgetRoundedCorner) * 1.5f);
+
+  // SYNC pills (background and caption; the LED is drawn live on top).
+  for (SynthButton* button : { sync_a_.get(), sync_b_.get() }) {
+    Rectangle<float> bounds = button->getBounds().toFloat();
+    g.setColour(findColour(Skin::kLabelBackground, true));
+    g.fillRoundedRectangle(bounds, bounds.getHeight() * 0.5f);
+    const float h = bounds.getHeight();
+    const float text_x = bounds.getX() + h * 0.36f + std::round(h * 0.36f) + h * 0.22f;
+    g.setColour(findColour(Skin::kBodyText, true));
+    g.setFont(Fonts::instance()->proportional_regular().withPointHeight(h * 0.46f));
+    g.drawText(TRANS("SYNC"), Rectangle<float>(text_x, bounds.getY(), bounds.getRight() - text_x - h * 0.1f, h),
+               Justification::centredLeft, false);
+  }
+
+  drawTextComponentBackground(g, mod_a_->getBounds(), true);
+  drawTextComponentBackground(g, mod_b_->getBounds(), true);
+  drawLabelForComponent(g, TRANS("MOD TYPE A"), mod_a_.get(), true);
+  drawLabelForComponent(g, TRANS("MOD TYPE B"), mod_b_.get(), true);
+  drawLabelForComponent(g, TRANS("RATE A"), visibleRate(true));
+  drawLabelForComponent(g, TRANS("AMOUNT A"), amount_a_.get());
+  drawLabelForComponent(g, TRANS("RATE B"), visibleRate(false));
+  drawLabelForComponent(g, TRANS("AMOUNT B"), amount_b_.get());
+}
+
+void VibratoSection::layoutKnobs() {
+  const float ratio_x = getWidth() / 580.0f, ratio_y = getHeight() / 136.5f;
+  auto rect = [&](float x, float y, float w, float h) {
+    return Rectangle<int>(std::round(x * ratio_x), std::round(y * ratio_y),
+                          std::round(w * ratio_x), std::round(h * ratio_y));
+  };
+  Rectangle<int> slot_a = rect(37.0f, 65.5f, 84.0f, 65.5f), slot_b = rect(220.0f, 65.5f, 84.0f, 65.5f);
+  SynthSlider* visible_a = visibleRate(true);
+  SynthSlider* visible_b = visibleRate(false);
+  for (SynthSlider* s : { rate_a_.get(), tempo_a_.get() })
+    s->setBounds(s == visible_a ? slot_a : Rectangle<int>());
+  for (SynthSlider* s : { rate_b_.get(), tempo_b_.get() })
+    s->setBounds(s == visible_b ? slot_b : Rectangle<int>());
+}
+
+void VibratoSection::resized() {
+  const float ratio_x = getWidth() / 580.0f, ratio_y = getHeight() / 136.5f;
+  auto rect = [&](float x, float y, float w, float h) {
+    return Rectangle<int>(std::round(x * ratio_x), std::round(y * ratio_y),
+                          std::round(w * ratio_x), std::round(h * ratio_y));
+  };
+
+  mod_a_->setBounds(rect(37.0f, 6.0f, 175.0f, 60.0f));
+  mod_b_->setBounds(rect(220.0f, 6.0f, 173.0f, 60.0f));
+  amount_a_->setBounds(rect(128.0f, 65.5f, 84.0f, 65.5f));
+  amount_b_->setBounds(rect(310.0f, 65.5f, 84.0f, 65.5f));
+  sync_a_->setBounds(rect(38.0f, 68.0f, 31.0f, 13.0f));
+  sync_b_->setBounds(rect(221.0f, 68.0f, 31.0f, 13.0f));
+  leds_on_->setBounds(getLocalBounds());
+  leds_off_->setBounds(getLocalBounds());
+  viewer_->setBounds(rect(409.0f, 7.0f, 127.0f, 125.0f));
+  meter_->setBounds(rect(551.0f, 19.0f, 14.0f, 100.0f));
+
+  SynthSection::resized();
+  layoutKnobs();
+}
+
+void VibratoSection::setActive(bool active) {
+  SynthSection::setActive(active);
+}
+
+void VibratoSection::buttonClicked(Button* clicked_button) {
+  SynthSection::buttonClicked(clicked_button);
+  if (clicked_button == sync_a_.get() || clicked_button == sync_b_.get()) {
+    layoutKnobs();
+    repaintBackground();
+  }
+}
+
+void VibratoSection::sliderValueChanged(Slider* changed_slider) {
+  SynthSection::sliderValueChanged(changed_slider);
+}
+
+void VibratoSection::setAllValues(vital::control_map& controls) {
+  SynthSection::setAllValues(controls);
+  layoutKnobs();
+  repaintBackground();
+}

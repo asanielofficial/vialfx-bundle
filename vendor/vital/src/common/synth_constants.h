@@ -110,6 +110,7 @@ namespace vital {
       kPitchShifter,
       kUtility,
       kFreqShifter,
+      kVibrato,
       kNumEffects
     };
 

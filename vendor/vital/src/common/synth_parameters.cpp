@@ -182,6 +182,28 @@ namespace vital {
       ValueDetails::kLinear, false, "%", "Freq Shifter Feedback Direction", nullptr },
     { "freq_shifter_dry_wet", 0x000000, 0.0, 1.0, 0.5, 0.0, 100.0,
       ValueDetails::kLinear, false, "%", "Freq Shifter Mix", nullptr },
+    { "vibrato_on", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Vibrato Switch", strings::kOffOnNames },
+    { "vibrato_mod_a", 0x000000, 0.0, 5.0, 0.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Vibrato Mod Type A", strings::kVibratoModNames },
+    { "vibrato_mod_b", 0x000000, 0.0, 5.0, 0.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Vibrato Mod Type B", strings::kVibratoModNames },
+    { "vibrato_rate_a", 0x000000, -3.0, 5.4, 2.321928, 0.0, 1.0,
+      ValueDetails::kExponential, false, " Hz", "Vibrato Rate A", nullptr },
+    { "vibrato_rate_b", 0x000000, -3.0, 5.4, 2.321928, 0.0, 1.0,
+      ValueDetails::kExponential, false, " Hz", "Vibrato Rate B", nullptr },
+    { "vibrato_sync_a", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Vibrato Rate A Sync", strings::kOffOnNames },
+    { "vibrato_sync_b", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Vibrato Rate B Sync", strings::kOffOnNames },
+    { "vibrato_tempo_a", 0x000000, 0.0, 10.0, 4.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Vibrato Rate A (Tempo)", strings::kSyncedFrequencyNames },
+    { "vibrato_tempo_b", 0x000000, 0.0, 10.0, 4.0, 0.0, 1.0,
+      ValueDetails::kIndexed, false, "", "Vibrato Rate B (Tempo)", strings::kSyncedFrequencyNames },
+    { "vibrato_amount_a", 0x000000, 0.0, 200.0, 25.0, 0.0, 1.0,
+      ValueDetails::kLinear, false, " cents", "Vibrato Amount A", nullptr },
+    { "vibrato_amount_b", 0x000000, 0.0, 200.0, 0.0, 0.0, 1.0,
+      ValueDetails::kLinear, false, " cents", "Vibrato Amount B", nullptr },
     { "utility_on", 0x000000, 0.0, 1.0, 0.0, 0.0, 1.0,
       ValueDetails::kIndexed, false, "", "Utility Switch", strings::kOffOnNames },
     { "utility_gain", 0x000000, -30.0, 30.0, 0.0, 0.0, 1.0,
@@ -652,7 +674,7 @@ namespace vital {
     // VialFX: the one effect in this plugin is on by default (so "Init Preset" keeps it running).
     {
       static const char* const kVialFxOn[] = { "chorus_on", "compressor_on", "delay_on", "distortion_on", "eq_on",
-                                               "filter_fx_on", "flanger_on", "phaser_on", "reverb_on", "pitch_shifter_on", "utility_on", "freq_shifter_on" };
+                                               "filter_fx_on", "flanger_on", "phaser_on", "reverb_on", "pitch_shifter_on", "utility_on", "freq_shifter_on", "vibrato_on" };
       details_lookup_[kVialFxOn[VITALFX_EFFECT]].default_value = 1.0f;
     }
 #endif

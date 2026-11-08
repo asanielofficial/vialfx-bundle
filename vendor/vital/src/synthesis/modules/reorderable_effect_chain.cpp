@@ -28,6 +28,7 @@
 #include "pitch_shifter_module.h"
 #include "utility_module.h"
 #include "freq_shifter_module.h"
+#include "vibrato_module.h"
 #include "synth_strings.h"
 
 namespace vital {
@@ -112,6 +113,8 @@ namespace vital {
         return new UtilityModule();
       case constants::kFreqShifter:
         return new FreqShifterModule(beats_per_second_, keytrack_);
+      case constants::kVibrato:
+        return new VibratoModule(beats_per_second_);
       default:
         return nullptr;
     }

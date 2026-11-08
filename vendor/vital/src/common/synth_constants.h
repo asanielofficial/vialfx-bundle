@@ -111,6 +111,7 @@ namespace vital {
       kUtility,
       kFreqShifter,
       kVibrato,
+      kTremolo,
       kNumEffects
     };
 

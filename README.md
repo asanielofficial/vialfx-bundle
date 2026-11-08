@@ -2,7 +2,7 @@
 
 Vital's effects, each as its own VST3 plugin:
 
-**Vial Chorus · Vial Compressor · Vial Delay · Vial Distortion · Vial EQ · Vial Filter · Vial Flanger · Vial Phaser · Vial Reverb · Vial Pitch Shifter · Vial Utility · Vial Freq Shifter · Vial Vibrato**
+**Vial Chorus · Vial Compressor · Vial Delay · Vial Distortion · Vial EQ · Vial Filter · Vial Flanger · Vial Phaser · Vial Reverb · Vial Pitch Shifter · Vial Utility · Vial Freq Shifter · Vial Vibrato · Vial Tremolo**
 
 Each plugin is the same module you see on Vital's effects tab, running Vital's own DSP, in its own window with:
 

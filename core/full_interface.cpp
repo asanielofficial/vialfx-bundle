@@ -123,7 +123,9 @@ Point<int> FullInterface::getDesignSize() {
   const float padding = skin.getValue(Skin::kPadding);
   const float section_height = 2.0f * knob_section - widget_margin;
   const float height = kTopHeight + padding + section_height + large_padding;
-  return Point<int>(static_cast<int>(kDesignWidth), static_cast<int>(std::ceil(height)));
+  // The Tremolo has two extra unit selectors, so its window is a little wider than the others.
+  const float width = vitalfx::thisEffect().kind == vitalfx::EffectKind::kTremolo ? kTremoloDesignWidth : kDesignWidth;
+  return Point<int>(static_cast<int>(width), static_cast<int>(std::ceil(height)));
 }
 
 void FullInterface::paintBackground(Graphics& g) {

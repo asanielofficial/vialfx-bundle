@@ -13,6 +13,7 @@
 #include "utility_section.h"
 #include "freq_shifter_section.h"
 #include "vibrato_section.h"
+#include "tremolo_section.h"
 #include "reverb_section.h"
 
 namespace vitalfx {
@@ -32,6 +33,7 @@ std::unique_ptr<SynthSection> createEffectSection(EffectKind kind, const vital::
     case EffectKind::kUtility:    return std::make_unique<UtilitySection>("UTILITY");
     case EffectKind::kFreqShifter: return std::make_unique<FreqShifterSection>("FREQ SHIFTER");
     case EffectKind::kVibrato: return std::make_unique<VibratoSection>("VIBRATO");
+    case EffectKind::kTremolo: return std::make_unique<TremoloSection>("TREMOLO");
   }
   return nullptr;
 }

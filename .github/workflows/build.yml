@@ -61,6 +61,12 @@ jobs:
             build/vialfx_host_test_artefacts/Release/vialfx_host_test \
             "build/plugins/Vibrato_artefacts/Release/VST3/Vial Vibrato.vst3" --vibrato
 
+      - name: Tremolo checks (depth, rate, A+B sum)
+        run: |
+          xvfb-run -a -s "-screen 0 1280x800x24 +extension GLX" \
+            build/vialfx_host_test_artefacts/Release/vialfx_host_test \
+            "build/plugins/Tremolo_artefacts/Release/VST3/Vial Tremolo.vst3" --tremolo
+
       - name: Collect bundle
         run: |
           mkdir -p VialFX-Bundle/VST3 VialFX-Bundle/CLAP

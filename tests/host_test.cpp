@@ -29,6 +29,7 @@ int main(int argc, char** argv) {
   const bool utility_test = argc > 2 && String(argv[2]) == "--utility";   // utility: gain/pan/invert/swap/width/haas/mono bass
   const bool shifter_test = argc > 2 && String(argv[2]) == "--shifter";   // freq shifter: sideband, units, stereo, feedback
   const bool vibrato_test = argc > 2 && String(argv[2]) == "--vibrato";   // vibrato: depth, rate, sum of A+B, bounded
+  const bool tremolo_test = argc > 2 && String(argv[2]) == "--tremolo";   // tremolo: depth, rate, A+B sum, bounded
   const bool editor_only = argc > 2 && String(argv[2]) == "--editor-only";   // keep window up ~15 s for screenshots
 
   AudioPluginFormatManager formats;
@@ -490,6 +491,101 @@ int main(int argc, char** argv) {
     auto v4 = play(1000, 140);
     double peak4 = 0; for (float x : v4) peak4 = std::max(peak4, (double) std::fabs(x));
     CHECK(std::isfinite(peak4) && peak4 > 0.1 && peak4 < 0.6, "tempo sync produces a stable output");
+
+    std::printf(failures ? "\n%d FAILURE(S)\n" : "\nALL CHECKS PASSED\n", failures);
+    return failures ? 1 : 0;
+  }
+
+  if (tremolo_test) {
+    auto find = [&](const char* name) -> AudioProcessorParameter* {
+      for (auto* p : params) if (p->getName(64).equalsIgnoreCase(name)) return p;
+      return nullptr;
+    };
+    auto *mod_a = find("Tremolo Mod Type A"), *mod_b = find("Tremolo Mod Type B"), *rate_a = find("Tremolo Rate A"),
+         *rate_b = find("Tremolo Rate B"), *amt_a = find("Tremolo Amount A"), *amt_b = find("Tremolo Amount B"),
+         *unit_a = find("Tremolo Rate A Unit");
+    CHECK(mod_a && mod_b && rate_a && rate_b && amt_a && amt_b && unit_a, "tremolo parameters found");
+    if (!(mod_a && mod_b && rate_a && rate_b && amt_a && amt_b && unit_a)) return 1;
+    const int block = 512;
+    plugin->setPlayConfigDetails(2, 2, 48000.0, block);
+    plugin->prepareToPlay(48000.0, block);
+    const double kVol = 0.5012;
+    auto hz = [](double f) { return (float) ((std::log2(f) + 3.0) / 8.4); };   // rate knob range -3..5.4 (log2 Hz)
+    auto reset = [&]() {
+      mod_a->setValue(0.0f); mod_b->setValue(0.0f); unit_a->setValue(0.0f);
+      rate_a->setValue(hz(5.0)); rate_b->setValue(hz(5.0));
+      amt_a->setValue(0.0f); amt_b->setValue(0.0f);
+    };
+    auto play = [&](double freq, int blocks) {
+      plugin->reset();
+      std::vector<float> out; MidiBuffer midi; AudioBuffer<float> buf(2, block);
+      double ph = 0;
+      for (int b = 0; b < blocks; ++b) {
+        for (int i = 0; i < block; ++i) {
+          float v = 0.4f * (float) std::sin(ph); ph += 2 * MathConstants<double>::pi * freq / 48000.0;
+          buf.setSample(0, i, v); buf.setSample(1, i, v);
+        }
+        plugin->processBlock(buf, midi);
+        if (b >= blocks - 190) for (int i = 0; i < block; ++i) out.push_back(buf.getSample(0, i));   // last ~2 s
+      }
+      return out;
+    };
+    auto amp = [](const std::vector<float>& v, double f) {
+      std::complex<double> a = 0; double w = 0; const int n = (int) v.size();
+      for (int i = 0; i < n; ++i) {
+        double h = 0.5 - 0.5 * std::cos(2 * MathConstants<double>::pi * i / n);
+        a += h * v[i] * std::polar(1.0, -2 * MathConstants<double>::pi * f * i / 48000.0); w += h;
+      }
+      return 2.0 * std::abs(a) / w;
+    };
+    const double in_amp = 0.4 * kVol;
+
+    reset();
+    auto n0 = play(1000, 260);
+    std::printf("      amount 0: 1 kHz amplitude %.4f (expect %.4f)\n", amp(n0, 1000), in_amp);
+    CHECK(std::abs(amp(n0, 1000) / in_amp - 1.0) < 0.05, "amount 0 passes the signal through");
+
+    // 100% sine at 5 Hz: gain = 0.5 + 0.5 sin -> carrier 0.5, sidebands 0.25 each.
+    reset(); amt_a->setValue(1.0f);
+    auto v1 = play(1000, 260);
+    double c = amp(v1, 1000) / in_amp, sb = 0.5 * (amp(v1, 1005) + amp(v1, 995)) / in_amp;
+
+    std::printf("      100%% @5 Hz: carrier %.3f (expect 0.5), sidebands %.3f (expect 0.25)\n", c, sb);
+    CHECK(std::abs(c - 0.5) < 0.04 && std::abs(sb - 0.25) < 0.04, "100% depth gives the expected spectrum");
+
+    // 50%: gain = 0.75 + 0.25 sin -> carrier 0.75, sidebands 0.125.
+    reset(); amt_a->setValue(0.5f);
+    auto v2 = play(1000, 260);
+    c = amp(v2, 1000) / in_amp; sb = 0.5 * (amp(v2, 1005) + amp(v2, 995)) / in_amp;
+    std::printf("      50%% @5 Hz: carrier %.3f (expect 0.75), sidebands %.3f (expect 0.125)\n", c, sb);
+    CHECK(std::abs(c - 0.75) < 0.04 && std::abs(sb - 0.125) < 0.03, "50% depth gives the expected spectrum");
+
+    // Rate sets the sideband spacing.
+    reset(); amt_a->setValue(1.0f); rate_a->setValue(hz(10.0));
+    auto v3 = play(1000, 260);
+    sb = 0.5 * (amp(v3, 1010) + amp(v3, 990)) / in_amp;
+    std::printf("      100%% @10 Hz: sidebands at +-10 Hz %.3f (expect 0.25)\n", sb);
+    CHECK(std::abs(sb - 0.25) < 0.04 && amp(v3, 1005) / in_amp < 0.03, "rate sets the sideband spacing");
+
+    // A and B add: 50% + 50% with the same shape and rate equals 100%.
+    reset(); amt_a->setValue(0.5f); amt_b->setValue(0.5f);
+    auto v4 = play(1000, 260);
+    sb = 0.5 * (amp(v4, 1005) + amp(v4, 995)) / in_amp;
+    std::printf("      50%% + 50%%: sidebands %.3f (expect 0.25)\n", sb);
+    CHECK(std::abs(sb - 0.25) < 0.04, "modulators A and B add");
+
+    for (int type = 0; type < 6; ++type) {
+      reset(); mod_a->setValue(type / 5.0f); mod_b->setValue(((type + 3) % 6) / 5.0f);
+      amt_a->setValue(1.0f); amt_b->setValue(1.0f); rate_a->setValue(hz(30.0)); rate_b->setValue(hz(0.3));
+      auto v = play(300, 140);
+      double peak = 0; for (float x : v) peak = std::max(peak, (double) std::fabs(x));
+      CHECK(std::isfinite(peak) && peak < 0.25, "extreme settings never exceed the input level");
+    }
+
+    reset(); amt_a->setValue(1.0f); unit_a->setValue(1.0f);
+    auto v5 = play(1000, 140);
+    double peak5 = 0; for (float x : v5) peak5 = std::max(peak5, (double) std::fabs(x));
+    CHECK(std::isfinite(peak5) && peak5 > 0.05 && peak5 < 0.25, "tempo unit produces a stable output");
 
     std::printf(failures ? "\n%d FAILURE(S)\n" : "\nALL CHECKS PASSED\n", failures);
     return failures ? 1 : 0;

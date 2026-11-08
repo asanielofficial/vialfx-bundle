@@ -26,6 +26,7 @@ class FullInterface : public SynthSection, public EffectHeader::Listener,
     static constexpr double kMinOpenGlVersion = 1.4;
     static constexpr int kTopHeight = 48;
     static constexpr float kDesignWidth = 600.0f;
+    static constexpr float kTremoloDesignWidth = 660.0f;
 
     explicit FullInterface(SynthGuiData* synth_gui_data);
     ~FullInterface() override;

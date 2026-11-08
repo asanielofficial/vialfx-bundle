@@ -8,7 +8,7 @@
 
 namespace vitalfx {
 
-enum class EffectKind { kChorus, kCompressor, kDelay, kDistortion, kEq, kFilter, kFlanger, kPhaser, kReverb, kPitchShifter, kUtility, kFreqShifter, kVibrato };
+enum class EffectKind { kChorus, kCompressor, kDelay, kDistortion, kEq, kFilter, kFlanger, kPhaser, kReverb, kPitchShifter, kUtility, kFreqShifter, kVibrato, kTremolo };
 
 struct EffectInfo {
   EffectKind kind;
@@ -35,6 +35,7 @@ inline const EffectInfo& getEffectInfo(EffectKind kind) {
     { EffectKind::kUtility,    "Utility",    "UTILITY",    "utility_",    "utility_on",    "Utility",    false },
     { EffectKind::kFreqShifter, "Freq Shifter", "FREQ SHIFTER", "freq_shifter_", "freq_shifter_on", "Freq Shifter", true },
     { EffectKind::kVibrato, "Vibrato", "VIBRATO", "vibrato_", "vibrato_on", "Vibrato", false },
+    { EffectKind::kTremolo, "Tremolo", "TREMOLO", "tremolo_", "tremolo_on", "Tremolo", false },
   };
   return kInfos[static_cast<int>(kind)];
 }

@@ -172,7 +172,8 @@ namespace strings {
     "pitch_shifter",
     "utility",
     "freq_shifter",
-    "vibrato"
+    "vibrato",
+    "tremolo"
   };
 
   const std::string kSyncedFrequencyNames[] = {
@@ -288,6 +289,7 @@ namespace strings {
     "UTILITY",
     "FREQ SHIFTER",
     "VIBRATO",
+    "TREMOLO",
   };
 
   const std::string kDestinationMenuNames[vital::constants::kNumSourceDestinations + vital::constants::kNumEffects] = {
@@ -309,6 +311,11 @@ namespace strings {
     "Utility",
     "Freq Shifter",
     "Vibrato",
+    "Tremolo",
+  };
+
+  const std::string kTremoloUnitNames[] = {
+    "Hz", "Tempo"
   };
 
   const std::string kVibratoModNames[] = {

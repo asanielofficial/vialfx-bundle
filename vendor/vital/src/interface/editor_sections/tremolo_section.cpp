@@ -136,7 +136,7 @@ class TremoloMeter : public OpenGlMultiQuad {
 };
 
 namespace {
-  constexpr float kDesignW = 580.0f, kDesignH = 166.5f;   // section size at the Tremolo's window size (30 taller than the others)
+  constexpr float kDesignW = 580.0f, kDesignH = 180.5f;   // section size at the Tremolo's window size (44 taller than the others)
 }
 
 TremoloSection::TremoloSection(String name) : SynthSection(name) {
@@ -196,14 +196,16 @@ void TremoloSection::paintBackground(Graphics& g) {
   // Dark panel behind the graph.
   g.setColour(findColour(Skin::kWidgetBackground, true));
   g.fillRoundedRectangle(std::round(409.0f * ratio_x), std::round(7.0f * ratio_y), std::round(127.0f * ratio_x),
-                         std::round(155.0f * ratio_y), findValue(Skin::kWidgetRoundedCorner) * 1.5f);
+                         std::round(169.0f * ratio_y), findValue(Skin::kWidgetRoundedCorner) * 1.5f);
 
   drawTextComponentBackground(g, mod_a_->getBounds(), true);
   drawTextComponentBackground(g, mod_b_->getBounds(), true);
-  drawTextComponentBackground(g, unit_a_->getBounds(), false);
-  drawTextComponentBackground(g, unit_b_->getBounds(), false);
+  drawTextComponentBackground(g, unit_a_->getBounds(), true);
+  drawTextComponentBackground(g, unit_b_->getBounds(), true);
   drawLabelForComponent(g, TRANS("MOD TYPE A"), mod_a_.get(), true);
   drawLabelForComponent(g, TRANS("MOD TYPE B"), mod_b_.get(), true);
+  drawLabelForComponent(g, TRANS("UNIT A"), unit_a_.get(), true);
+  drawLabelForComponent(g, TRANS("UNIT B"), unit_b_.get(), true);
   drawLabelForComponent(g, TRANS("RATE A"), visibleRate(true));
   drawLabelForComponent(g, TRANS("AMOUNT A"), amount_a_.get());
   drawLabelForComponent(g, TRANS("RATE B"), visibleRate(false));
@@ -236,10 +238,10 @@ void TremoloSection::resized() {
   mod_b_->setBounds(rect(220.0f, 6.0f, 173.0f, 60.0f));
   amount_a_->setBounds(rect(128.0f, 65.5f, 84.0f, 65.5f));
   amount_b_->setBounds(rect(310.0f, 65.5f, 84.0f, 65.5f));
-  unit_a_->setBounds(rect(37.0f, 134.0f, 175.0f, 26.0f));
-  unit_b_->setBounds(rect(220.0f, 134.0f, 173.0f, 26.0f));
-  viewer_->setBounds(rect(409.0f, 7.0f, 127.0f, 155.0f));
-  meter_->setBounds(rect(551.0f, 19.0f, 14.0f, 130.0f));
+  unit_a_->setBounds(rect(37.0f, 134.0f, 175.0f, 41.0f));
+  unit_b_->setBounds(rect(220.0f, 134.0f, 173.0f, 41.0f));
+  viewer_->setBounds(rect(409.0f, 7.0f, 127.0f, 169.0f));
+  meter_->setBounds(rect(551.0f, 19.0f, 14.0f, 144.0f));
 
   SynthSection::resized();
   layoutKnobs();

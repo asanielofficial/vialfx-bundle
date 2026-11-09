@@ -94,6 +94,17 @@ int main(int argc, char** argv) {
         }
       });
     }
+    // VFX_RESIZE="ms:WxH,ms:WxH": resize the editor after the given delays (for screenshots of the dynamic scaling).
+    if (const char* resize_env = std::getenv("VFX_RESIZE")) {
+      StringArray steps = StringArray::fromTokens(String(resize_env), ",", "");
+      for (const String& step : steps) {
+        int ms = step.upToFirstOccurrenceOf(":", false, false).getIntValue();
+        String size = step.fromFirstOccurrenceOf(":", false, false);
+        MessageManager::getInstance()->runDispatchLoopUntil(ms);
+        editor->setSize(size.upToFirstOccurrenceOf("x", false, false).getIntValue(),
+                        size.fromFirstOccurrenceOf("x", false, false).getIntValue());
+      }
+    }
     MessageManager::getInstance()->runDispatchLoopUntil(60000);
     stop = true;
     if (audio.joinable()) audio.join();

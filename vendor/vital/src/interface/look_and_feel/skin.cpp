@@ -662,11 +662,6 @@ namespace {
       std::vector<BinInfo> list = {
         { "Global", { Skin::kNone } },
         { "Header", { Skin::kLogo, Skin::kHeader } },
-        { "Input / Oscillators", { Skin::kOscillator, Skin::kSample, Skin::kSub } },
-        { "Filters", { Skin::kFilter, Skin::kFxFilter } },
-        { "Envelopes", { Skin::kEnvelope } },
-        { "LFO / Tables", { Skin::kLfo, Skin::kRandomLfo } },
-        { "Voice / MIDI", { Skin::kVoice, Skin::kMacro, Skin::kKeyboard } },
       };
 
       BinInfo effects = { "Effects", { Skin::kAllEffects } };
@@ -677,9 +672,8 @@ namespace {
       for (const EffectModuleBin& module : effectModuleBins())
         list.push_back({ module.name, { module.section }, effects_index });
 
-      list.push_back({ "Matrix / Mod", { Skin::kModulationDragDrop, Skin::kModulationMatrix } });
-      list.push_back({ "Browser", { Skin::kPresetBrowser, Skin::kPopupBrowser } });
-      list.push_back({ "Overlays / Advanced", { Skin::kOverlay, Skin::kAdvanced, Skin::kWavetableEditor } });
+      list.push_back({ "Preset Browser", { Skin::kPresetBrowser, Skin::kPopupBrowser } });
+      list.push_back({ "Settings / Overlays", { Skin::kAdvanced, Skin::kOverlay } });
       return list;
     }();
     return bins;
@@ -1041,6 +1035,10 @@ class SkinEditor : public Component, public Button::Listener, public ChangeListe
       g.setColour(kEditorDim);
       g.setFont(12.0f);
       g.drawText(SkinBins::name(bin_) + " bin", 14, 34, 200, 16, Justification::centredLeft);
+      if (bin_note_.isNotEmpty()) {
+        g.setColour(kEditorAccent);
+        g.drawText(bin_note_, 200, 34, std::max(60, default_button_.getX() - 212), 16, Justification::centredLeft, true);
+      }
     }
 
     void resized() override {
@@ -1188,6 +1186,22 @@ class SkinEditor : public Component, public Button::Listener, public ChangeListe
         SynthSection* section = findBinSection(under, full_interface_, bin);
         if (section != nullptr)
           rects.push_back(full_interface_->getLocalArea(section, section->getLocalBounds()));
+      }
+
+      // Nothing hovered: keep the selected bin outlined so it is clear what is being edited.
+      if (rects.empty() && hover_editor_bin_ < 0 && bin_ > 0) {
+        collectBinSections(full_interface_, SkinBins::sections(bin_), full_interface_, rects);
+        bin = bin_;
+      }
+
+      // A bin the plugin window does not currently show (the preset browser, the settings page, another effect).
+      const int shown_bin = hover_editor_bin_ > 0 ? hover_editor_bin_ : bin_;
+      String note = (rects.empty() && shown_bin > 0 && hover_editor_bin_ != 0)
+                      ? SkinBins::name(shown_bin) + " is not showing in this window."
+                      : String();
+      if (note != bin_note_) {
+        bin_note_ = note;
+        repaint();
       }
 
       if (rects.empty())
@@ -1736,6 +1750,7 @@ class SkinEditor : public Component, public Button::Listener, public ChangeListe
     int selected_row_;
     int hover_editor_bin_;
     int last_hover_bin_;
+    String bin_note_;
 
     std::vector<std::unique_ptr<TextButton>> bin_buttons_;
     TextButton default_button_, undo_button_, redo_button_, import_button_, save_button_, add_button_;

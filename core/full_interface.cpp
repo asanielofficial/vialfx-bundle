@@ -119,8 +119,7 @@ FullInterface::~FullInterface() {
   open_gl_context_.setRenderer(nullptr);
 }
 
-Point<int> FullInterface::getDesignSize() {
-  Skin skin;
+Point<int> FullInterface::designSizeFor(const Skin& skin) {
   const float knob_section = skin.getValue(Skin::kKnobSectionHeight);
   const float widget_margin = skin.getValue(Skin::kWidgetMargin);
   const float large_padding = skin.getValue(Skin::kLargePadding);
@@ -133,6 +132,11 @@ Point<int> FullInterface::getDesignSize() {
   return Point<int>(static_cast<int>(kDesignWidth), static_cast<int>(std::ceil(height)) + extra);
 }
 
+Point<int> FullInterface::getDesignSize() {
+  Skin skin;
+  return designSizeFor(skin);
+}
+
 void FullInterface::paintBackground(Graphics& g) {
   g.fillAll(findColour(Skin::kBackground, true));
   paintChildrenShadows(g);
@@ -142,8 +146,26 @@ void FullInterface::paintBackground(Graphics& g) {
 
 void FullInterface::setSkinValues(const Skin& skin, bool top_level) {
   SynthSection::setSkinValues(skin, top_level);
-  if (top_level)
-    updateGlow(skin);
+  if (!top_level)
+    return;
+
+  updateGlow(skin);
+
+  // The skin editor can change the spacing values the window's proportions come from (padding, knob section
+  // height...). The layout follows the live skin, so the window's aspect ratio has to follow it too, otherwise the
+  // interface is letterboxed and no longer scales with the window.
+  const Point<int> design = designSizeFor(skin);
+  if (design != design_size_) {
+    design_size_ = design;
+    if (on_design_size_changed) {
+      Component::SafePointer<FullInterface> safe(this);
+      MessageManager::callAsync([safe, design]() {
+        if (FullInterface* self = safe.getComponent())
+          if (self->on_design_size_changed)
+            self->on_design_size_changed(design);
+      });
+    }
+  }
 }
 
 void FullInterface::updateGlow(const Skin& skin) {
@@ -346,7 +368,7 @@ void FullInterface::resized() {
 
   ScopedLock lock(open_gl_critical_section_);
 
-  const Point<int> design = getDesignSize();
+  const Point<int> design = design_size_;
 
   int left = 0;
   int top = 0;

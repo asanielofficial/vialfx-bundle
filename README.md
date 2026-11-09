@@ -41,14 +41,14 @@ picks it up (unless you later choose a different skin in that plugin).
 ### Skin Editor
 
 Open it by Alt-clicking the menu (≡) button next to the preset name and choosing **Open Skin Editor**. It replaces the
-old Vital skin designer and is the editor from the main VialFX plugin: it stays on top of the plugin window and can
-be resized.
+old Vital skin designer and is the editor from the main VialFX plugin: it opens next to the plugin window (never on top
+of it), stays on top and can be resized.
 
-- **Bins:** the interface is grouped into bins (Header, Effects, Browser, Overlays...) plus a Global bin for the base
+- **Bins:** the interface is grouped into bins (Header, Effects, Preset Browser, Settings / Overlays) plus a Global bin for the base
   skin. The Effects bin edits every effect module together and each module (Chorus ... Tremolo) has its own
   sub-bin. **+ Add override** adds more colours or values to a bin.
 - **Colour picker:** hex (AARRGGBB), RGB, alpha, undo/redo, Default (full reset), Save and Import of `.vialskin` files.
-- **Hover outline / Alt inspector:** hovering the plugin outlines the section and its bin; hold Alt to inspect a single
+- **Hover outline / Alt inspector:** the selected bin stays outlined in the plugin; hovering the plugin outlines the section and its bin (a bin that is not on screen, such as the preset browser, says so); hold Alt to inspect a single
   knob, slider, button or text and Alt-click it to edit the colours it uses.
 - **Glow and gradients:** every colour has Glow Strength and Glow Size knobs, and any colour can become a 2-3 stop
   gradient with an angle. Both are drawn by a full-screen pass and saved in the skin.

@@ -298,6 +298,7 @@ class SettingsSection::KeytrackBox : public SynthSection {
 
 // ---- The page ------------------------------------------------------------------------------------------
 SettingsSection::SettingsSection() : SynthSection("settings") {
+  setSkinOverride(Skin::kAdvanced);
   oversample_ = std::make_unique<OversampleBox>();
   addSubSection(oversample_.get());
 

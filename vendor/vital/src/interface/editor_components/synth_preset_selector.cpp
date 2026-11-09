@@ -370,13 +370,23 @@ void SynthPresetSelector::signIn() {
 void SynthPresetSelector::openSkinDesigner() {
   skin_designer_.deleteAndZero();
   SkinDesigner* skin_designer = new SkinDesigner(full_skin_.get(), findParentComponentOfClass<FullInterface>());
-  RectanglePlacement placement(RectanglePlacement::xLeft |
-                               RectanglePlacement::yTop |
-                               RectanglePlacement::doNotResize);
-
-  Rectangle<int> area(0, 0, 860, 840);
-  Rectangle<int> bounds = Desktop::getInstance().getDisplays().getMainDisplay().userArea.reduced(20);
-  Rectangle<int> bounds_result(placement.appliedTo(area, bounds));
+  // Open next to the plugin window (right, then left) so the editor never covers the interface it is editing.
+  // If there is no room on either side it goes to the top-left of the screen as before.
+  const int width = 860, height = 840;
+  Component* top_level = getTopLevelComponent();
+  Rectangle<int> plugin_area = top_level->getScreenBounds();
+  const Displays::Display* display = Desktop::getInstance().getDisplays().getDisplayForRect(plugin_area);
+  Rectangle<int> screen = (display != nullptr ? display->userArea
+                                              : Desktop::getInstance().getDisplays().getMainDisplay().userArea);
+  const int w = std::min(width, screen.getWidth());
+  const int h = std::min(height, screen.getHeight());
+  const int gap = 8;
+  int y = std::max(screen.getY(), std::min(plugin_area.getY(), screen.getBottom() - h));
+  Rectangle<int> bounds_result(screen.getX() + 20, screen.getY() + 20, w, h);
+  if (plugin_area.getRight() + gap + w <= screen.getRight())
+    bounds_result = Rectangle<int>(plugin_area.getRight() + gap, y, w, h);
+  else if (plugin_area.getX() - gap - w >= screen.getX())
+    bounds_result = Rectangle<int>(plugin_area.getX() - gap - w, y, w, h);
 
   skin_designer->setBounds(bounds_result);
   skin_designer->setResizable(true, false);

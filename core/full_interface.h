@@ -116,7 +116,12 @@ class FullInterface : public SynthSection, public EffectHeader::Listener,
     float getPixelScaling() const { return display_scale_; }
     int getPixelMultiple() const override { return pixel_multiple_; }
 
+    // Called (on the message thread) when a skin edit changes the proportions of the window.
+    std::function<void(Point<int>)> on_design_size_changed;
+
   private:
+    static Point<int> designSizeFor(const Skin& skin);
+    Point<int> design_size_;
     void timerCallback() override;   // picks up skins synced from other VialFX plugins
     Time bundle_skin_applied_;
     std::unique_ptr<EffectHeader> header_;

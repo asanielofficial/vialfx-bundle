@@ -20,6 +20,15 @@ EffectEditor::EffectEditor(EffectPlugin& plugin) :
   addAndMakeVisible(gui_.get());
   setResizable(true, true);
   setSize(design.x, design.y);
+
+  // A skin edit that changes the spacing metrics changes the window's proportions: keep the aspect ratio, the
+  // minimum size and the current width in step with it.
+  gui_->on_design_size_changed = [this](Point<int> d) {
+    constrainer_.setMinimumSize(d.x / 2, d.y / 2);
+    constrainer_.setFixedAspectRatio(static_cast<double>(d.x) / d.y);
+    const int width = std::max(getWidth(), d.x / 2);
+    setSize(width, static_cast<int>(std::lround(width * static_cast<double>(d.y) / d.x)));
+  };
 }
 
 void EffectEditor::resized() {

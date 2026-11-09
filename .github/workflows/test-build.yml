@@ -1,0 +1,100 @@
+name: Test build
+
+# A quick portable build for trying a change: one platform (Windows or Linux), VST3 only, one zip. No installers,
+# no CLAP, no macOS, no host tests. Run it from the Actions tab and pick the platform; optionally name a single
+# plugin (CMake target name without _VST3, e.g. Tremolo) to build just that one. The full builds are in
+# "Build VialFX-Bundle".
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Platform to build"
+        type: choice
+        options: [ windows, linux ]
+        default: windows
+      plugin:
+        description: "Plugin target to build (all, or e.g. Tremolo, FreqShifter, PitchShifter)"
+        type: string
+        default: all
+
+permissions:
+  contents: read
+
+env:
+  PLUGINS: Chorus Compressor Delay Distortion EQ Filter Flanger FreqShifter Phaser PitchShifter Reverb Tremolo Utility Vibrato
+
+jobs:
+  linux:
+    if: inputs.platform == 'linux'
+    name: Linux portable (zip)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install JUCE build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ninja-build zip \
+            libx11-dev libxext-dev libxrandr-dev libxinerama-dev libxcursor-dev \
+            libfreetype-dev libfontconfig1-dev libasound2-dev libgl1-mesa-dev \
+            libglu1-mesa-dev libcurl4-openssl-dev
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DVITALFX_BUILD_TESTS=OFF
+
+      - name: Build VST3
+        run: |
+          list="${{ inputs.plugin }}"
+          [ "$list" = "all" ] && list="$PLUGINS"
+          targets=""
+          for p in $list; do targets="$targets ${p}_VST3"; done
+          cmake --build build --target $targets
+
+      - name: Zip
+        run: |
+          mkdir -p VialFX-Bundle/VST3
+          cp -r build/plugins/*_artefacts/Release/VST3/*.vst3 VialFX-Bundle/VST3/
+          cp LICENSE VialFX-Bundle/
+          zip -qr VialFX-Bundle-linux-portable.zip VialFX-Bundle
+          ls -l VialFX-Bundle-linux-portable.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VialFX-Bundle-linux-portable
+          path: VialFX-Bundle-linux-portable.zip
+
+  windows:
+    if: inputs.platform == 'windows'
+    name: Windows portable (zip)
+    runs-on: windows-2022
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DVITALFX_BUILD_TESTS=OFF
+
+      - name: Build VST3
+        shell: pwsh
+        run: |
+          $list = "${{ inputs.plugin }}"
+          if ($list -eq "all") { $list = $env:PLUGINS }
+          $targets = $list -split '\s+' | Where-Object { $_ } | ForEach-Object { "${_}_VST3" }
+          cmake --build build --target @targets
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Zip
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force VialFX-Bundle/VST3 | Out-Null
+          Get-ChildItem build/plugins/*_artefacts/Release/VST3/*.vst3 | Copy-Item -Destination VialFX-Bundle/VST3 -Recurse
+          Copy-Item LICENSE VialFX-Bundle/
+          Compress-Archive -Path VialFX-Bundle -DestinationPath VialFX-Bundle-windows-portable.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VialFX-Bundle-windows-portable
+          path: VialFX-Bundle-windows-portable.zip

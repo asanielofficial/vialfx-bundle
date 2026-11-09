@@ -1,9 +1,9 @@
 name: Build VialFX-Bundle
 
 # Current scope: VST3 and CLAP on Linux, Windows and macOS.
+# Whole builds (all platforms, installers, CLAP, host tests) run only when asked for, from the Actions tab. Pushes do
+# not start them; use "Test build" for a quick portable Windows or Linux build of a change.
 on:
-  push:
-  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -164,7 +164,7 @@ jobs:
   # without that extra layer, every push to main refreshes a "nightly" pre-release with the files as assets.
   release:
     needs: [linux, windows, macos]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-22.04
     permissions:
       contents: write

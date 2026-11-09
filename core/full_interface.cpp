@@ -28,6 +28,7 @@ FullInterface::FullInterface(SynthGuiData* synth_data) : SynthSection("full_inte
 
   settings_section_ = std::make_unique<SettingsSection>();
   addSubSection(settings_section_.get());
+
   settings_section_->setVisible(false);
 
   header_ = std::make_unique<EffectHeader>();
@@ -95,6 +96,9 @@ FullInterface::FullInterface(SynthGuiData* synth_data) : SynthSection("full_inte
   popup_display_1_->toFront(true);
   popup_display_2_->toFront(true);
 
+  bin_highlight_ = std::make_unique<BinHighlight>();
+  addSubSection(bin_highlight_.get());
+
   setAllValues(synth_data->controls);
   setOpaque(true);
   setSkinValues(default_skin, true);
@@ -136,6 +140,106 @@ void FullInterface::paintBackground(Graphics& g) {
   paintChildrenBackgrounds(g);
 }
 
+void FullInterface::setSkinValues(const Skin& skin, bool top_level) {
+  SynthSection::setSkinValues(skin, top_level);
+  if (top_level)
+    updateGlow(skin);
+}
+
+void FullInterface::updateGlow(const Skin& skin) {
+  std::vector<Skin::GlowEntry> glows;
+  skin.collectGlows(glows);
+  std::vector<GlowPass::Key> keys;
+  for (const auto& glow : glows) {
+    GlowPass::Key key = { glow.color.getFloatRed(), glow.color.getFloatGreen(), glow.color.getFloatBlue(),
+                          glow.glow, glow.size };
+    bool merged = false;
+    for (GlowPass::Key& existing : keys) {
+      float distance = std::abs(existing.red - key.red) + std::abs(existing.green - key.green) +
+                       std::abs(existing.blue - key.blue);
+      if (distance < 0.03f) {
+        existing.glow = std::max(existing.glow, key.glow);
+        existing.size = std::max(existing.size, key.size);
+        merged = true;
+        break;
+      }
+    }
+    if (!merged && static_cast<int>(keys.size()) < GlowPass::kMaxKeys)
+      keys.push_back(key);
+  }
+
+  {
+    ScopedLock lock(open_gl_critical_section_);
+    glow_pass_.setKeys(keys);
+  }
+
+  gradient_entries_.clear();
+  skin.collectGradients(gradient_entries_);
+  updateGradientRegions();
+}
+
+static void collectSectionRects(Component* component, Skin::SectionOverride override_id, FullInterface* root,
+                                std::vector<Rectangle<int>>& rects) {
+  for (int i = 0; i < component->getNumChildComponents(); ++i) {
+    Component* child = component->getChildComponent(i);
+    if (!child->isVisible())
+      continue;
+
+    SynthSection* section = dynamic_cast<SynthSection*>(child);
+    if (section != nullptr && section->getSkinOverride() == override_id && child->getWidth() > 0) {
+      rects.push_back(root->getLocalArea(child, child->getLocalBounds()));
+      continue;
+    }
+    collectSectionRects(child, override_id, root, rects);
+  }
+}
+
+void FullInterface::updateGradientRegions() {
+  std::vector<GlowPass::GradientKey> keys;
+  float width = static_cast<float>(getWidth());
+  float height = static_cast<float>(getHeight());
+
+  if (width > 0.0f && height > 0.0f) {
+    for (const Skin::GradientEntry& entry : gradient_entries_) {
+      if (static_cast<int>(keys.size()) >= GlowPass::kMaxGradients)
+        break;
+
+      Rectangle<int> region = getLocalBounds();
+      if (entry.section != Skin::kNone) {
+        std::vector<Rectangle<int>> rects;
+        collectSectionRects(this, static_cast<Skin::SectionOverride>(entry.section), this, rects);
+        if (rects.empty())
+          continue;
+
+        region = rects[0];
+        for (const Rectangle<int>& rect : rects)
+          region = region.getUnion(rect);
+      }
+
+      GlowPass::GradientKey key = { };
+      key.base[0] = entry.color.getFloatRed();
+      key.base[1] = entry.color.getFloatGreen();
+      key.base[2] = entry.color.getFloatBlue();
+      key.num_stops = static_cast<int>(entry.gradient.stops.size()) + 1;
+      key.rect[0] = region.getX() / width;
+      key.rect[1] = 1.0f - region.getBottom() / height;
+      key.rect[2] = region.getRight() / width;
+      key.rect[3] = 1.0f - region.getY() / height;
+      float radians = degreesToRadians(entry.gradient.angle);
+      key.direction[0] = std::cos(radians);
+      key.direction[1] = -std::sin(radians);
+      const Colour& stop1 = entry.gradient.stops[0];
+      const Colour& stop2 = entry.gradient.stops.size() > 1 ? entry.gradient.stops[1] : stop1;
+      key.stop1[0] = stop1.getFloatRed(); key.stop1[1] = stop1.getFloatGreen(); key.stop1[2] = stop1.getFloatBlue();
+      key.stop2[0] = stop2.getFloatRed(); key.stop2[1] = stop2.getFloatGreen(); key.stop2[2] = stop2.getFloatBlue();
+      keys.push_back(key);
+    }
+  }
+
+  ScopedLock lock(open_gl_critical_section_);
+  glow_pass_.setGradients(keys);
+}
+
 void FullInterface::copySkinValues(const Skin& skin) {
   ScopedLock open_gl_lock(open_gl_critical_section_);
   skin.copyValuesToLookAndFeel(DefaultLookAndFeel::instance());
@@ -162,7 +266,20 @@ void FullInterface::timerCallback() {
   }
 }
 
+void FullInterface::setBinHighlight(const std::vector<Rectangle<int>>& rects, const String& label) {
+  if (bin_highlight_)
+    bin_highlight_->setHighlight(rects, label);
+}
+
+void FullInterface::clearBinHighlight() {
+  if (bin_highlight_)
+    bin_highlight_->clearHighlight();
+}
+
 void FullInterface::reloadSkin(const Skin& skin) {
+  // The shrink-and-restore forces every component to lay itself out again. The render thread is held off for
+  // both steps, otherwise it can draw the tiny in-between layout and the window flashes on every skin edit.
+  ScopedLock open_gl_lock(open_gl_critical_section_);
   copySkinValues(skin);
   Rectangle<int> bounds = getBounds();
   setBounds(0, 0, bounds.getWidth() / 4, bounds.getHeight() / 4);
@@ -274,6 +391,8 @@ void FullInterface::resized() {
   about_section_->setBounds(bounds);
   save_section_->setBounds(bounds);
   delete_section_->setBounds(bounds);
+  if (bin_highlight_)
+    bin_highlight_->setBounds(getLocalBounds());
   preset_browser_->setBounds(section_bounds.getX(), header_->getBottom(),
                              section_bounds.getWidth(), height - header_->getBottom());
 
@@ -281,6 +400,8 @@ void FullInterface::resized() {
 
   if (getWidth() && getHeight())
     redoBackground();
+  if (!gradient_entries_.empty())
+    updateGradientRegions();
 }
 
 void FullInterface::animate(bool animate) {
@@ -340,12 +461,15 @@ void FullInterface::renderOpenGL() {
   open_gl_.display_scale = display_scale_;
   background_.render(open_gl_);
   renderOpenGlComponents(open_gl_, animate_);
+  glow_pass_.render(open_gl_.context, roundToInt(render_scale * getWidth()), roundToInt(render_scale * getHeight()),
+                    render_scale);
 }
 
 void FullInterface::openGLContextClosing() {
   if (unsupported_)
     return;
 
+  glow_pass_.destroy();
   background_.destroy(open_gl_);
   destroyOpenGlComponents(open_gl_);
   open_gl_.shaders = nullptr;

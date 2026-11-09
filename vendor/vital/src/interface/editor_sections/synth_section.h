@@ -194,6 +194,8 @@ class SynthSection : public Component, public Slider::Listener,
     virtual ~SynthSection() = default;
 
     void setParent(const SynthSection* parent) { parent_ = parent; }
+    // Glow amount (0..1) the skin gives a colour, looked up through the parent chain.
+    float findGlow(Skin::ColorId color_id) const;
     float findValue(Skin::ValueId value_id) const;
 
     virtual void reset();
@@ -204,6 +206,7 @@ class SynthSection : public Component, public Slider::Listener,
     virtual void paintBackground(Graphics& g);
     virtual void setSkinValues(const Skin& skin, bool top_level);
     void setSkinOverride(Skin::SectionOverride skin_override) { skin_override_ = skin_override; }
+    Skin::SectionOverride getSkinOverride() const { return skin_override_; }
     virtual void repaintBackground();
     void showPopupBrowser(SynthSection* owner, Rectangle<int> bounds, std::vector<File> directories,
                           String extensions, std::string passthrough_name, std::string additional_folders_name);

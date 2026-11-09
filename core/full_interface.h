@@ -5,7 +5,9 @@
 
 #include "JuceHeader.h"
 
+#include "bin_highlight.h"
 #include "effect_header.h"
+#include "glow_pass.h"
 #include "memory.h"
 #include "open_gl_background.h"
 #include "popup_browser.h"
@@ -39,6 +41,14 @@ class FullInterface : public SynthSection, public EffectHeader::Listener,
 
     void paintBackground(Graphics& g) override;
     void copySkinValues(const Skin& skin);
+    void setSkinValues(const Skin& skin, bool top_level) override;
+    // Glow needs no layout: just refresh the colours the glow pass looks for.
+    void updateGlow(const Skin& skin);
+    // Gradient colours are re-aimed at their sections' bounds whenever the layout changes.
+    void updateGradientRegions();
+    // Skin editor: dashed outline over the parts of the UI that belong to a bin.
+    void setBinHighlight(const std::vector<Rectangle<int>>& rects, const String& label);
+    void clearBinHighlight();
     void reloadSkin(const Skin& skin);
     // Called after this plugin publishes its skin to the bundle, so it doesn't reload its own change.
     void markBundleSkinApplied();
@@ -121,6 +131,9 @@ class FullInterface : public SynthSection, public EffectHeader::Listener,
     std::unique_ptr<PopupDisplay> popup_display_2_;
     std::unique_ptr<SaveSection> save_section_;
     std::unique_ptr<DeleteSection> delete_section_;
+    std::unique_ptr<BinHighlight> bin_highlight_;
+    GlowPass glow_pass_;
+    std::vector<Skin::GradientEntry> gradient_entries_;
 
     int width_ = 0;
     int resized_width_ = 0;

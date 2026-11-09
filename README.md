@@ -40,7 +40,7 @@ picks it up (unless you later choose a different skin in that plugin).
 
 ### Skin Editor
 
-Open it from the header's alternate menu (right-click the preset name) with **Open Skin Editor**. It replaces the
+Open it by Alt-clicking the menu (≡) button next to the preset name and choosing **Open Skin Editor**. It replaces the
 old Vital skin designer and is the editor from the main VialFX plugin: it stays on top of the plugin window and can
 be resized.
 

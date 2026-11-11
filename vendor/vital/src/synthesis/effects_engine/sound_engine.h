@@ -106,6 +106,11 @@ namespace vital {
       LineGenerator* getSpectralCurve(int index);
       void resetSpectralCurve(int index);
       void resetSpectralDrawings();
+
+      // The three drawn response curves (A, B, C) of the Custom model of the Other filters (saved with the preset).
+      LineGenerator* getFilterCurve(int index) { return filter_curves_[index].get(); }
+      void resetFilterCurve(int index);
+      void resetFilterDrawings();
       void setRandomSeed(uint32_t seed);
       uint32_t getRandomSeed() const;
 
@@ -123,6 +128,7 @@ namespace vital {
       Value* fft_size_ = nullptr;
       std::unique_ptr<Wavetable> fx_tables_[2];
       std::unique_ptr<LineGenerator> spectral_curves_[kNumSpectralCurves];
+      std::unique_ptr<LineGenerator> filter_curves_[kNumSpectralCurves];
 
       CircularQueue<Processor*> modulation_processors_;
 

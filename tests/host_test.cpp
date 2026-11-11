@@ -31,6 +31,7 @@ int main(int argc, char** argv) {
   const bool vibrato_test = argc > 2 && String(argv[2]) == "--vibrato";   // vibrato: depth, rate, sum of A+B, bounded
   const bool tremolo_test = argc > 2 && String(argv[2]) == "--tremolo";   // tremolo: depth, rate, A+B sum, bounded
   const bool morph_test = argc > 2 && String(argv[2]) == "--morph";   // morph: every spectral/warp mode finite + audible, latency
+  const bool modes_test = argc > 2 && String(argv[2]) == "--modes";   // new filter models / distortion types: finite + audible
   const bool editor_only = argc > 2 && String(argv[2]) == "--editor-only";   // keep window up ~15 s for screenshots
 
   AudioPluginFormatManager formats;
@@ -504,6 +505,66 @@ int main(int argc, char** argv) {
     double peak4 = 0; for (float x : v4) peak4 = std::max(peak4, (double) std::fabs(x));
     CHECK(std::isfinite(peak4) && peak4 > 0.1 && peak4 < 0.6, "tempo sync produces a stable output");
 
+    std::printf(failures ? "\n%d FAILURE(S)\n" : "\nALL CHECKS PASSED\n", failures);
+    return failures ? 1 : 0;
+  }
+
+  if (modes_test) {
+    auto find = [&](const char* name) -> AudioProcessorParameter* {
+      for (auto* p : params) if (p->getName(64).equalsIgnoreCase(name)) return p;
+      return nullptr;
+    };
+    const int block = 512;
+    plugin->setPlayConfigDetails(2, 2, 48000.0, block);
+    plugin->prepareToPlay(48000.0, block);
+    auto run = [&](float& energy, bool& finite) {
+      plugin->reset();
+      MidiBuffer midi; AudioBuffer<float> buf(2, block); double ph = 0; energy = 0; finite = true;
+      for (int b = 0; b < 100; ++b) {
+        for (int i = 0; i < block; ++i) {
+          float v = 0.3f * (float) std::sin(ph) + 0.1f * (float) std::sin(ph * 2.7); ph += 2 * MathConstants<double>::pi * 220.0 / 48000.0;
+          buf.setSample(0, i, v); buf.setSample(1, i, v);
+        }
+        plugin->processBlock(buf, midi);
+        for (int i = 0; i < block; ++i) {
+          float v = buf.getSample(0, i);
+          if (!std::isfinite(v) || std::abs(v) > 16.0f) finite = false;
+          if (b >= 80) energy += v * v;
+        }
+      }
+    };
+    float e; bool fin;
+    auto sweep = [&](AudioProcessorParameter* p, const char* what) {
+      int n = p->getNumSteps();
+      std::printf("      %s: %d values\n", what, n);
+      for (int m = 0; m < n; ++m) {
+        p->setValue((float) m / (float) (n - 1)); run(e, fin);
+        String name = p->getText(p->getValue(), 32);
+        std::printf("      %s %2d %-22s energy %.4f\n", what, m, name.toRawUTF8(), e);
+        CHECK(fin, (String(what) + " " + name + " stays finite").toRawUTF8());
+        CHECK(e > 0.0001f, (String(what) + " " + name + " is audible").toRawUTF8());
+      }
+    };
+    if (auto* model = find("Filter fx Model")) {
+      auto* style = find("Filter fx Style");
+      auto* blend = find("Filter fx Blend");
+      auto* drive = find("Filter fx Drive");
+      CHECK(model->getNumSteps() >= 8, "filter models include the Other category");
+      if (drive) drive->setValue(0.5f);
+      sweep(model, "model");
+      // every sub-model of the Other filters, with the blend slider in the middle
+      for (int m = 0; m < model->getNumSteps(); ++m) {
+        model->setValue((float) m / (float) (model->getNumSteps() - 1));
+        if (model->getText(model->getValue(), 32).containsIgnoreCase("other") && style) {
+          if (blend) blend->setValue(0.5f);
+          sweep(style, "other-style");
+        }
+      }
+    }
+    if (auto* type = find("Distortion Type")) {
+      CHECK(type->getNumSteps() >= 9, "distortion types include Tube, Saturator and Overdrive");
+      sweep(type, "distortion");
+    }
     std::printf(failures ? "\n%d FAILURE(S)\n" : "\nALL CHECKS PASSED\n", failures);
     return failures ? 1 : 0;
   }

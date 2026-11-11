@@ -72,6 +72,14 @@ jobs:
             build/vialfx_host_test_artefacts/Release/vialfx_host_test \
             "build/plugins/Tremolo_artefacts/Release/VST3/Vial Tremolo.vst3" --tremolo
 
+      - name: Filter and distortion mode checks
+        run: |
+          for p in Filter Distortion; do
+            xvfb-run -a -s "-screen 0 1280x800x24 +extension GLX" \
+              build/vialfx_host_test_artefacts/Release/vialfx_host_test \
+              "build/plugins/${p}_artefacts/Release/VST3/Vial ${p}.vst3" --modes
+          done
+
       - name: Morph checks (all modes, latency)
         run: |
           xvfb-run -a -s "-screen 0 1280x800x24 +extension GLX" \

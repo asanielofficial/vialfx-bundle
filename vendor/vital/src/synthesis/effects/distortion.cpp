@@ -18,6 +18,7 @@
 
 #include "synth_constants.h"
 
+#include <algorithm>
 #include <climits>
 
 namespace vital {
@@ -41,6 +42,32 @@ namespace vital {
 
     force_inline poly_float hardClip(poly_float value, poly_float drive) {
       return utils::clamp(value * drive, -1.0f, 1.0f);
+    }
+
+    // Asymmetric tube stage: positive half clips like tanh, negative half rounds off
+    // with a rational curve. The mismatch adds even harmonics, like a triode.
+    force_inline poly_float tube(poly_float value, poly_float drive) {
+      poly_float x = value * drive;
+      poly_float positive = futils::tanh(x);
+      poly_float negative = x / (poly_float::abs(x) * 0.7f + 1.0f);
+      negative = utils::max(negative, -1.0f);
+      poly_mask is_positive = poly_float::greaterThanOrEqual(x, 0.0f);
+      poly_float out = utils::maskLoad(negative, positive, is_positive);
+      return out * 0.9f;
+    }
+
+    // Gentle cubic saturation with a smooth knee that reaches full scale with zero slope.
+    force_inline poly_float saturator(poly_float value, poly_float drive) {
+      poly_float x = utils::clamp(value * drive * 0.5f, -1.0f, 1.0f);
+      return (x - x * x * x * (1.0f / 3.0f)) * 1.5f;
+    }
+
+    // Exponential diode-style soft clip: sign(x) * (1 - exp(-|x|)).
+    force_inline poly_float overdrive(poly_float value, poly_float drive) {
+      poly_float x = value * drive * 1.5f;
+      poly_float magnitude = poly_float(1.0f) - futils::exp(poly_float(0.0f) - poly_float::abs(x));
+      poly_mask is_positive = poly_float::greaterThanOrEqual(x, 0.0f);
+      return utils::maskLoad(poly_float(0.0f) - magnitude, magnitude, is_positive);
     }
 
     force_inline poly_float bitCrush(poly_float value, poly_float drive) {
@@ -75,7 +102,20 @@ namespace vital {
     }
   } // namespace
 
-  poly_float Distortion::getDrivenValue(int type, poly_float value, poly_float drive) {
+  // Overdrive with several gain stages in a row, each one clipping what the one before it left.
+  template<poly_float(*distort)(poly_float, poly_float), poly_float(*scale)(poly_float)>
+  void Distortion::processStaged(int num_samples, const poly_float* audio_in, const poly_float* drive,
+                                 poly_float* audio_out, int stages) {
+    for (int i = 0; i < num_samples; ++i) {
+      poly_float current_drive = scale(drive[i]);
+      poly_float sample = audio_in[i];
+      for (int stage = 0; stage < stages; ++stage)
+        sample = distort(sample, current_drive);
+      audio_out[i] = sample;
+    }
+  }
+
+  poly_float Distortion::getDrivenValue(int type, poly_float value, poly_float drive, int stages) {
     switch(type) {
       case kSoftClip:
         return softClip(value, drive);
@@ -89,6 +129,15 @@ namespace vital {
         return bitCrush(value, drive);
       case kDownSample:
         return bitCrush(value, poly_float(1.001f) - poly_float(kPeriodScale) / drive);
+      case kTube:
+        return tube(value, drive);
+      case kSaturator:
+        return saturator(value, drive);
+      case kOverdrive: {
+        for (int stage = 0; stage < std::max(1, stages); ++stage)
+          value = overdrive(value, drive);
+        return value;
+      }
       default:
         return value;
     }
@@ -161,6 +210,16 @@ namespace vital {
         break;
       case kBitCrush:
         processTimeInvariant<bitCrush, bitCrushScale>(compact_samples, audio_out, drive_out, audio_out);
+        break;
+      case kTube:
+        processTimeInvariant<tube, driveDbScale>(compact_samples, audio_out, drive_out, audio_out);
+        break;
+      case kSaturator:
+        processTimeInvariant<saturator, driveDbScale>(compact_samples, audio_out, drive_out, audio_out);
+        break;
+      case kOverdrive:
+        processStaged<overdrive, driveDbScale>(compact_samples, audio_out, drive_out, audio_out,
+                                               std::max(1, std::min(static_cast<int>(kMaxStages), static_cast<int>(input(kStages)->at(0)[0] + 0.5f))));
         break;
       case kDownSample:
         processDownSample(compact_samples, audio_out, drive_out, audio_out);

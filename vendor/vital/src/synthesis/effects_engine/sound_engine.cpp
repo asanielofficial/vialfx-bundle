@@ -28,6 +28,7 @@
 #include "reorderable_effect_chain.h"
 #include "value_switch.h"
 #include "morph_module.h"
+#include "other_filter.h"
 #include "fx_tables.h"
 #include "wavetable.h"
 #include "line_generator.h"
@@ -43,6 +44,14 @@ namespace vital {
     }
     for (int i = 0; i < kNumSpectralCurves; ++i)
       spectral_curves_[i] = std::make_unique<LineGenerator>();
+    // The Custom filter's curves exist before the graph too: filters find them through the table current while it is built.
+    const LineGenerator* filter_curve_table[kNumSpectralCurves];
+    for (int i = 0; i < kNumSpectralCurves; ++i) {
+      filter_curves_[i] = std::make_unique<LineGenerator>();
+      filter_curve_table[i] = filter_curves_[i].get();
+    }
+    resetFilterDrawings();
+    OtherFilter::CurveScope curve_scope(filter_curve_table);
     init();
     bps_ = data_->controls["beats_per_minute"];
     modulation_processors_.reserve(kMaxModulationConnections);
@@ -380,6 +389,29 @@ namespace vital {
       curve->setPower(1, 0.0f);
     }
     curve->render();
+  }
+
+  void SoundEngine::resetFilterCurve(int index) {
+    // Custom filter: A is a low pass, B a band pass, C a high pass (a point's y is upside down: 0 = pass).
+    static const float kShapes[3][5][2] = {
+      { { 0.0f, 0.0f }, { 0.35f, 0.0f }, { 0.7f, 1.0f }, { 1.0f, 1.0f }, { 1.0f, 1.0f } },
+      { { 0.0f, 1.0f }, { 0.35f, 1.0f }, { 0.5f, 0.0f }, { 0.65f, 1.0f }, { 1.0f, 1.0f } },
+      { { 0.0f, 1.0f }, { 0.3f, 1.0f }, { 0.65f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 0.0f } } };
+    LineGenerator* curve = filter_curves_[index].get();
+    curve->initLinear();
+    int count = index == 1 ? 5 : 4;
+    curve->setNumPoints(count);
+    for (int i = 0; i < count; ++i) {
+      curve->setPoint(i, { kShapes[index][i][0], kShapes[index][i][1] });
+      curve->setPower(i, 0.0f);
+    }
+    curve->setSmooth(true);
+    curve->render();
+  }
+
+  void SoundEngine::resetFilterDrawings() {
+    for (int i = 0; i < kNumSpectralCurves; ++i)
+      resetFilterCurve(i);
   }
 
   void SoundEngine::resetSpectralDrawings() {

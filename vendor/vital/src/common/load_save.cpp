@@ -139,6 +139,13 @@ json LoadSave::stateToJson(SynthBase* synth, const CriticalSection& critical_sec
     settings_data["spectral_drawings"] = drawings;
   }
 
+  {
+    json filter_curves;
+    for (int i = 0; i < vital::SoundEngine::kNumSpectralCurves; ++i)
+      filter_curves.push_back(synth->getEngine()->getFilterCurve(i)->stateToJson());
+    settings_data["filter_curves"] = filter_curves;
+  }
+
   json lfos;
   for (int i = 0; i < vital::kNumLfos; ++i) {
     LineGenerator* lfo_source = synth->getLfoSource(i);
@@ -236,6 +243,15 @@ void LoadSave::loadWavetables(SynthBase* synth, const json& wavetables) {
 }
 
 void LoadSave::loadSpectralDrawings(SynthBase* synth, const json& settings) {
+  synth->getEngine()->resetFilterDrawings();
+  if (settings.count("filter_curves") && settings["filter_curves"].is_array()) {
+    const json& fc = settings["filter_curves"];
+    for (int i = 0; i < vital::SoundEngine::kNumSpectralCurves && i < static_cast<int>(fc.size()); ++i) {
+      synth->getEngine()->getFilterCurve(i)->jsonToState(fc[i]);
+      synth->getEngine()->getFilterCurve(i)->render();
+    }
+  }
+
   if (synth->getWavetableCreator(0) == nullptr)
     return;
 

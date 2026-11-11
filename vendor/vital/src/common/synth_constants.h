@@ -129,6 +129,7 @@ namespace vital {
       kFormant,
       kComb,
       kPhase,
+      kOther,
       kNumFilterModels
     };
 

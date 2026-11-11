@@ -5,8 +5,9 @@
 #if VITALFX_HAS_MORPH
 #include "lfo_editor.cpp"
 #include "line_map_editor.cpp"
-#include "line_editor.cpp"
 #endif
+// The Custom filter model (every plugin has the filter section) draws its curves with the line editor.
+#include "line_editor.cpp"
 #include "synth_button.cpp"
 #include "synth_preset_selector.cpp"
 #include "preset_selector.cpp"

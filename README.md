@@ -70,9 +70,9 @@ itself, with an on/off button, its knobs and sliders, and tempo sync wherever Vi
 | **Vial Chorus** | Vital's chorus: voices, delay, feedback, mod depth and tempo sync, with its animated voice display |
 | **Vial Compressor** | Vital's multiband compressor with its band display |
 | **Vial Delay** | Stereo delay with sync, feedback and filtering |
-| **Vial Distortion** | Distortion with Vital's types, drive, filter and spectrum display |
+| **Vial Distortion** | Distortion with Vital's types plus **Tube** (asymmetric, even harmonics), **Saturator** (smooth cubic) and **Overdrive** (exponential soft clip with a stages knob), drive, filter and spectrum display |
 | **Vial EQ** | Vital's three-band EQ with its response display |
-| **Vial Filter** | Vital's filter models, with **Keytrack** that follows incoming MIDI notes |
+| **Vial Filter** | Vital's filter models plus the **Other** category (Band Reject, All-Pass, Metal Comb, Metal Reverb, Disperser and a drawable **Custom** filter), with a drive knob on every model and **Keytrack** that follows incoming MIDI notes |
 | **Vial Flanger** | Flanger with sync, feedback and its animated display |
 | **Vial Phaser** | Phaser with sync, feedback and its animated display |
 | **Vial Reverb** | Vital's reverb with its size, decay, filter and chorus controls |

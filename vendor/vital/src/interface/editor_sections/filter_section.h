@@ -21,6 +21,8 @@
 #include "preset_selector.h"
 
 class FilterResponse;
+class LineGenerator;
+class SpectralCurveEditor;
 class OpenGlToggleButton;
 class SynthButton;
 class SynthSlider;
@@ -71,6 +73,11 @@ class FilterSection : public SynthSection, public PresetSelector::Listener {
     FilterSection(String name, String suffix);
 
     void showModelKnobs();
+    void bindCurves();
+    void showCurveEditor();
+    void parentHierarchyChanged() override;
+    void sliderValueChanged(Slider* moved_slider) override;
+    int editedCurve() const;
     void setFilterText();
     void setLabelText();
     void notifyFilterChange();
@@ -109,6 +116,12 @@ class FilterSection : public SynthSection, public PresetSelector::Listener {
     std::unique_ptr<PlainTextComponent> filter_label_2_;
 
     std::unique_ptr<SynthSlider> blend_transpose_;
+
+    // The Custom model of the Other filters: three drawn response curves (A, B, C) over the response display.
+    std::unique_ptr<LineGenerator> placeholder_curve_;
+    std::unique_ptr<SpectralCurveEditor> curve_editors_[3];
+    std::unique_ptr<OpenGlShapeButton> edit_curve_button_;
+    bool curves_bound_ = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FilterSection)
 };

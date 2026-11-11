@@ -298,22 +298,25 @@ class SpectralWarpEditor : public SynthSection, public PresetSelector::Listener,
       int x = margin;
       int y = margin;
       paint_->setBounds(x, y, top_height, top_height);
-      int pattern_width = size_ratio_ * 80;
+      // In a half-width (split) panel the bar is compacted: smaller pattern/grid/reset and no preset menu.
+      const bool narrow = getWidth() < size_ratio_ * 430;
+      int pattern_width = size_ratio_ * (narrow ? 44 : 80);
       paint_pattern_->setPadding(margin / 2);
       paint_pattern_->setBounds(paint_->getRight(), y, pattern_width, top_height);
       pattern_group_ = Rectangle<int>(paint_->getX(), y, paint_pattern_->getRight() - paint_->getX(), top_height);
 
-      int grid_width = size_ratio_ * 46;
+      int grid_width = size_ratio_ * (narrow ? 34 : 46);
       grid_size_x_->setBounds(pattern_group_.getRight() + margin, y, grid_width, top_height);
       grid_size_y_->setBounds(grid_size_x_->getRight(), y, grid_width, top_height);
       grid_group_ = Rectangle<int>(grid_size_x_->getX(), y, grid_size_y_->getRight() - grid_size_x_->getX(), top_height);
       smooth_->setBounds(grid_group_.getRight() + margin, y, top_height, top_height);
 
       close_button_->setBounds(getWidth() - margin - top_height, y, top_height, top_height);
-      int reset_width = size_ratio_ * 70;
+      int reset_width = size_ratio_ * (narrow ? 52 : 70);
       reset_button_->setBounds(close_button_->getX() - margin - reset_width, y, reset_width, top_height);
       int title_x = smooth_->getRight() + margin;
-      preset_selector_->setBounds(title_x, y, reset_button_->getX() - margin - title_x, top_height);
+      preset_selector_->setVisible(!narrow);
+      preset_selector_->setBounds(title_x, y, std::max(1, reset_button_->getX() - margin - title_x), top_height);
 
       // The drawing well fills the width, with the position slider flush underneath (like the LFO's phase bar).
       // The flanger has six detail controls: they are layered in two rows of three so each keeps room for its name

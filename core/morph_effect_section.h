@@ -127,6 +127,9 @@ class MorphEffectSection : public SynthSection {
     void attachmentVisibilityChanged() {
       if (suppress_layout_)
         return;
+      // Re-split the docked editors even when the window height does not change (two editors share one row).
+      if (getWidth() > 0)
+        resized();
       if (layout_callback_)
         layout_callback_();
     }

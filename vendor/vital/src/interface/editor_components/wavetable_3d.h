@@ -110,6 +110,12 @@ class Wavetable3d : public OpenGlComponent, public AudioFileDropSource {
     void mouseExit(const MouseEvent& e) override;
     void mouseWheelMove(const MouseEvent& e, const MouseWheelDetails& wheel) override;
     void setFrameSlider(SynthSlider* slider) { frame_slider_ = slider; }
+    // The effect build's table displays follow the lane's amount knob (0..1 across all frames); this lets them show
+    // that knob's modulation too.
+    void setFrameModulation(const vital::output_map& mono_modulations, const std::string& name) {
+      auto mono = mono_modulations.find(name);
+      frame_amount_outputs_ = { mono == mono_modulations.end() ? nullptr : mono->second, nullptr };
+    }
     void setSpectralMorphSlider(Slider* slider) { spectral_morph_slider_ = slider; }
     void setDistortionSlider(Slider* slider) { distortion_slider_ = slider; }
     void setDistortionPhaseSlider(Slider* slider) { distortion_phase_slider_ = slider; }
@@ -147,6 +153,9 @@ class Wavetable3d : public OpenGlComponent, public AudioFileDropSource {
     vital::Wavetable* getWavetable() { return wavetable_; }
 
   private:
+    float frameSliderValue() const;
+    // The frame being shown for each voice: the slider's, plus the modulation of the control it stands for.
+    vital::poly_float frameValue();
     bool updateRenderValues();
     void loadIntoTimeDomain(int index);
     void loadWaveData(int index);
@@ -181,6 +190,7 @@ class Wavetable3d : public OpenGlComponent, public AudioFileDropSource {
 
     std::vector<Listener*> listeners_;
     std::pair<vital::Output*, vital::Output*> wave_frame_outputs_;
+    std::pair<vital::Output*, vital::Output*> frame_amount_outputs_ = { nullptr, nullptr };
     std::pair<vital::Output*, vital::Output*> spectral_morph_outputs_;
     std::pair<vital::Output*, vital::Output*> distortion_outputs_;
     std::pair<vital::Output*, vital::Output*> distortion_phase_outputs_;

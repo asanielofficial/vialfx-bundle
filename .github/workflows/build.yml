@@ -67,6 +67,12 @@ jobs:
             build/vialfx_host_test_artefacts/Release/vialfx_host_test \
             "build/plugins/Tremolo_artefacts/Release/VST3/Vial Tremolo.vst3" --tremolo
 
+      - name: Morph checks (all modes, latency)
+        run: |
+          xvfb-run -a -s "-screen 0 1280x800x24 +extension GLX" \
+            build/vialfx_host_test_artefacts/Release/vialfx_host_test \
+            "build/plugins/Morph_artefacts/Release/VST3/Vial Morph.vst3" --morph
+
       - name: Collect bundle
         run: |
           mkdir -p VialFX-Bundle/VST3 VialFX-Bundle/CLAP

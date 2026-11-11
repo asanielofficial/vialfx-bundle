@@ -24,6 +24,9 @@ namespace vital {
 
   constexpr int kNumLfos = 8;
   constexpr int kNumOscillators = 3;
+  // The Morph effect has two wavetable slots: 0 = Distort Table (warp), 1 = Spectral Table.
+  constexpr int kNumFxTables = 2;
+  constexpr int kNumWavetableSlots = kNumFxTables;
   constexpr int kNumOscillatorWaveFrames = 257;
   constexpr int kNumEnvelopes = 6;
   constexpr int kNumRandomLfos = 4;
@@ -55,6 +58,7 @@ namespace vital {
   const std::string kSampleExtensionsList = "*.wav;*.flac";
   const std::string kSkinExtension = "vialskin";
   const std::string kLfoExtension = "vitallfo";
+  const std::string kLfoExtensionsList = "*.vialshape;*.vitallfo";
   const std::string kBankExtension = "vitalbank";
 
   namespace constants {
@@ -112,6 +116,7 @@ namespace vital {
       kFreqShifter,
       kVibrato,
       kTremolo,
+      kMorph,
       kNumEffects
     };
 

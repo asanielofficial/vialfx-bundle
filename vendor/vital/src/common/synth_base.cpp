@@ -15,6 +15,7 @@
  */
 
 #include "synth_base.h"
+#include "fx_tables.h"
 
 #include "sample_source.h"
 #include "sound_engine.h"
@@ -36,11 +37,11 @@ SynthBase::SynthBase() : expired_(false) {
 
   mod_connections_.reserve(vital::kMaxModulationConnections);
 
-  for (int i = 0; i < vital::kNumOscillators; ++i) {
+  for (int i = 0; i < vital::kNumWavetableSlots; ++i) {
     vital::Wavetable* wavetable = engine_->getWavetable(i);
     if (wavetable) {
       wavetable_creators_[i] = std::make_unique<WavetableCreator>(wavetable);
-      wavetable_creators_[i]->init();
+      initWavetableCreator(i);
     }
   }
 
@@ -64,10 +65,15 @@ SynthBase::SynthBase() : expired_(false) {
 SynthBase::~SynthBase() { }
 
 void SynthBase::valueChanged(const std::string& name, vital::mono_float value) {
-  controls_[name]->set(value);
+  // Editor-only sliders (grid sizes, paint pattern...) are not engine controls.
+  auto control = controls_.find(name);
+  if (control != controls_.end() && control->second)
+    control->second->set(value);
 }
 
 void SynthBase::valueChangedInternal(const std::string& name, vital::mono_float value) {
+  if (controls_.find(name) == controls_.end())
+    return;
   valueChanged(name, value);
   setValueNotifyHost(name, value);
 }
@@ -284,7 +290,23 @@ vital::Wavetable* SynthBase::getWavetable(int index) {
 }
 
 WavetableCreator* SynthBase::getWavetableCreator(int index) {
+  if (index < 0 || index >= vital::kNumWavetableSlots)
+    return nullptr;
   return wavetable_creators_[index].get();
+}
+
+// The Morph effect's two table slots start from the built-in tables (transfer curves for the warp table, filter
+// responses for the spectral table).
+void SynthBase::initWavetableCreator(int index) {
+  WavetableCreator* creator = getWavetableCreator(index);
+  if (creator == nullptr)
+    return;
+
+  const int kind = vital::FxTables::kindOfSlot(index);
+  std::vector<float> frames(vital::FxTables::kFrames * vital::WaveFrame::kWaveformSize);
+  for (int f = 0; f < vital::FxTables::kFrames; ++f)
+    vital::FxTables::fillFrame(kind, f, frames.data() + f * vital::WaveFrame::kWaveformSize);
+  creator->initFromFrames(frames.data(), vital::FxTables::kFrames, kind == 0 ? "Distort Table" : "Spectral Table");
 }
 
 vital::Sample* SynthBase::getSample() {
@@ -306,9 +328,10 @@ int SynthBase::getSampleRate() {
 void SynthBase::initEngine() {
   clearModulations();
   if (getWavetableCreator(0)) {
-    for (int i = 0; i < vital::kNumOscillators; ++i)
-      getWavetableCreator(i)->init();
+    for (int i = 0; i < vital::kNumWavetableSlots; ++i)
+      initWavetableCreator(i);
 
+    engine_->resetSpectralDrawings();
     engine_->getSample()->init();
   }
 

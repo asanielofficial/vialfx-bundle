@@ -13,6 +13,7 @@ class TextSelector;
 //   OVERSAMPLING   1x / 2x / 4x / 8x (Vital's own control, saved with the session)
 //   DISPLAY        Frequency units (Semitones / Hz) and Skin, exactly as in Vital
 //   KEYTRACK       filter plugin only: follow incoming MIDI notes
+//   FFT SIZE       Morph only: 256 .. 32768, with the latency it adds
 class SettingsSection : public SynthSection {
   public:
     SettingsSection();
@@ -29,10 +30,12 @@ class SettingsSection : public SynthSection {
     class OversampleBox;
     class DisplayBox;
     class KeytrackBox;
+    class FftBox;
 
     std::unique_ptr<OversampleBox> oversample_;
     std::unique_ptr<DisplayBox> display_;
     std::unique_ptr<KeytrackBox> keytrack_;
+    std::unique_ptr<FftBox> fft_;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SettingsSection)
 };

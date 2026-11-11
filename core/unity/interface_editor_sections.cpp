@@ -7,6 +7,9 @@
 #include "synth_section.cpp"
 #include "volume_section.cpp"
 #include "chorus_section.cpp"
+#if VITALFX_HAS_MORPH
+#include "wavetable_edit_section.cpp"
+#endif
 #include "phaser_section.cpp"
 #include "compressor_section.cpp"
 #include "reverb_section.cpp"

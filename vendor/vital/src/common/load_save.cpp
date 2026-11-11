@@ -120,12 +120,23 @@ json LoadSave::stateToJson(SynthBase* synth, const CriticalSection& critical_sec
 
   if (synth->getWavetableCreator(0)) {
     json wavetables;
-    for (int i = 0; i < vital::kNumOscillators; ++i) {
+    for (int i = 0; i < vital::kNumWavetableSlots; ++i) {
       WavetableCreator* wavetable_creator = synth->getWavetableCreator(i);
+      if (wavetable_creator == nullptr)
+        continue;
       wavetables.push_back(wavetable_creator->stateToJson());
     }
 
     settings_data["wavetables"] = wavetables;
+
+    // Morph's drawn curves (Spectral Filter, Phaser, Flanger) and its Random Amplitudes seed.
+    json curves;
+    for (int i = 0; i < vital::SoundEngine::kNumSpectralCurves; ++i)
+      curves.push_back(synth->getEngine()->getSpectralCurve(i)->stateToJson());
+    json drawings;
+    drawings["curves"] = curves;
+    drawings["random_seed"] = synth->getEngine()->getRandomSeed();
+    settings_data["spectral_drawings"] = drawings;
   }
 
   json lfos;
@@ -208,10 +219,37 @@ void LoadSave::loadWavetables(SynthBase* synth, const json& wavetables) {
   int i = 0;
   for (const json& wavetable : wavetables) {
     WavetableCreator* wavetable_creator = synth->getWavetableCreator(i);
-    wavetable_creator->jsonToState(wavetable);
-    wavetable_creator->render();
+    if (wavetable_creator == nullptr)
+      break;
+    if (wavetable.is_null())
+      synth->initWavetableCreator(i);
+    else {
+      wavetable_creator->jsonToState(wavetable);
+      wavetable_creator->render();
+    }
     i++;
   }
+
+  // Presets without tables get the built-in ones.
+  for (; i < vital::kNumWavetableSlots; ++i)
+    synth->initWavetableCreator(i);
+}
+
+void LoadSave::loadSpectralDrawings(SynthBase* synth, const json& settings) {
+  if (synth->getWavetableCreator(0) == nullptr)
+    return;
+
+  synth->getEngine()->resetSpectralDrawings();
+  if (!settings.count("spectral_drawings") || !settings["spectral_drawings"].is_object())
+    return;
+
+  const json& drawings = settings["spectral_drawings"];
+  if (drawings.count("curves") && drawings["curves"].is_array()) {
+    for (int i = 0; i < vital::SoundEngine::kNumSpectralCurves && i < static_cast<int>(drawings["curves"].size()); ++i)
+      synth->getEngine()->getSpectralCurve(i)->jsonToState(drawings["curves"][i]);
+  }
+  if (drawings.count("random_seed") && drawings["random_seed"].is_number())
+    synth->getEngine()->setRandomSeed(drawings["random_seed"].get<uint32_t>());
 }
 
 void LoadSave::loadLfos(SynthBase* synth, const json& lfos) {
@@ -1045,6 +1083,7 @@ bool LoadSave::jsonToState(SynthBase* synth, std::map<std::string, String>& save
   loadModulations(synth, modulations);
   loadSample(synth, sample);
   loadWavetables(synth, wavetables);
+  loadSpectralDrawings(synth, settings);
   loadLfos(synth, lfos);
   loadSaveState(save_info, data);
   synth->checkOversampling();
@@ -1760,7 +1799,7 @@ File LoadSave::getDataDirectory() {
 #ifdef VITALFX_EFFECT
   // VialFX: presets live in <Documents>/VialFX/Bundle/<Effect>/ (User/Presets/... inside it).
   static const char* const kVialFxFolders[] = { "Chorus", "Compressor", "Delay", "Distortion", "EQ",
-                                                "Filter", "Flanger", "Phaser", "Reverb", "Pitch Shifter", "Utility", "Freq Shifter", "Vibrato", "Tremolo" };
+                                                "Filter", "Flanger", "Phaser", "Reverb", "Pitch Shifter", "Utility", "Freq Shifter", "Vibrato", "Tremolo", "Morph" };
   File vialfx_directory = File::getSpecialLocation(File::userDocumentsDirectory)
                               .getChildFile("VialFX").getChildFile("Bundle")
                               .getChildFile(kVialFxFolders[VITALFX_EFFECT]);

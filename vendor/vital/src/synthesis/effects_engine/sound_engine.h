@@ -21,6 +21,8 @@
 #include "note_handler.h"
 #include "tuning.h"
 
+#include <memory>
+
 class LineGenerator;
 
 namespace vital {
@@ -97,6 +99,16 @@ namespace vital {
 
       void checkOversampling();
 
+      // Morph: the drawn curves (Spectral Filter, Phaser, Flanger), the Random Amplitudes seed and the latency of the
+      // spectral stage (the FFT size while Morph is on with a spectral mode chosen). Saved with the preset.
+      static constexpr int kNumSpectralCurves = 3;
+      int getLatencySamples() const;
+      LineGenerator* getSpectralCurve(int index);
+      void resetSpectralCurve(int index);
+      void resetSpectralDrawings();
+      void setRandomSeed(uint32_t seed);
+      uint32_t getRandomSeed() const;
+
     private:
       EffectsModulationHandler* modulation_handler_;
       Upsampler* upsampler_;
@@ -108,6 +120,9 @@ namespace vital {
       Value* bps_;
       Value* legato_;
       PeakMeter* peak_meter_;
+      Value* fft_size_ = nullptr;
+      std::unique_ptr<Wavetable> fx_tables_[2];
+      std::unique_ptr<LineGenerator> spectral_curves_[kNumSpectralCurves];
 
       CircularQueue<Processor*> modulation_processors_;
 

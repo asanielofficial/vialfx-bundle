@@ -7,6 +7,10 @@
 #include "delete_section.h"
 #include "effect_info.h"
 #include "effect_section_factory.h"
+#if VITALFX_HAS_MORPH
+#include "morph_effect_section.h"
+#include "wavetable_edit_section.h"
+#endif
 #include "fonts.h"
 #include "preset_browser.h"
 #include "save_section.h"
@@ -22,9 +26,40 @@ FullInterface::FullInterface(SynthGuiData* synth_data) : SynthSection("full_inte
   markBundleSkinApplied();
   startTimer(1500);
 
+#if VITALFX_HAS_MORPH
+  {
+    auto morph = std::make_unique<MorphEffectSection>(synth_data);
+    morph_section_ = morph.get();
+    effect_section_ = std::move(morph);
+  }
+#else
   effect_section_ = vitalfx::createEffectSection(static_cast<vitalfx::EffectKind>(VITALFX_EFFECT),
                                                  synth_data->mono_modulations);
+#endif
   addSubSection(effect_section_.get());
+
+#if VITALFX_HAS_MORPH
+  if (morph_section_) {
+    // The two table modes' wavetable editors (slot 0 = Distort Table, 1 = Spectral Table).
+    for (int i = 0; i < vital::kNumWavetableSlots; ++i) {
+      if (synth_data->wavetable_creators[i] == nullptr)
+        continue;
+      wavetable_edits_[i] = std::make_unique<WavetableEditSection>(i, synth_data->wavetable_creators[i]);
+      addSubSection(wavetable_edits_[i].get());
+      wavetable_edits_[i]->setVisible(false);
+    }
+    morph_section_->setLayoutCallback([this]() { morphLayoutChanged(); });
+    morph_section_->setTableEditorCallback([this](int index) { showWavetableEditSection(index); });
+    morph_section_->setTableImportCallback(
+        [this](int index, String name, InputStream* stream, WavetableCreator::AudioFileLoadStyle style) {
+          if (index < 0 || index >= vital::kNumWavetableSlots || wavetable_edits_[index] == nullptr) {
+            delete stream;
+            return false;
+          }
+          return wavetable_edits_[index]->loadAudioAsWavetable(name, stream, style);
+        });
+  }
+#endif
 
   settings_section_ = std::make_unique<SettingsSection>();
   addSubSection(settings_section_.get());
@@ -119,13 +154,26 @@ FullInterface::~FullInterface() {
   open_gl_context_.setRenderer(nullptr);
 }
 
-Point<int> FullInterface::designSizeFor(const Skin& skin) {
-  const float knob_section = skin.getValue(Skin::kKnobSectionHeight);
-  const float widget_margin = skin.getValue(Skin::kWidgetMargin);
-  const float large_padding = skin.getValue(Skin::kLargePadding);
-  const float padding = skin.getValue(Skin::kPadding);
-  const float section_height = 2.0f * knob_section - widget_margin;
-  const float height = kTopHeight + padding + section_height + large_padding;
+FullInterface::DesignMetrics FullInterface::metricsFor(const Skin& skin) {
+  DesignMetrics metrics;
+  metrics.knob_section = skin.getValue(Skin::kKnobSectionHeight);
+  metrics.widget_margin = skin.getValue(Skin::kWidgetMargin);
+  metrics.large_padding = skin.getValue(Skin::kLargePadding);
+  metrics.padding = skin.getValue(Skin::kPadding);
+  return metrics;
+}
+
+Point<int> FullInterface::designSizeFor(const DesignMetrics& m, int view) {
+  if (view == 2)   // Morph's wavetable editor: a window of its own
+    return Point<int>(kWavetableEditorWidth, kWavetableEditorHeight);
+
+  float section_height = 2.0f * m.knob_section - m.widget_margin;
+  if (vitalfx::thisEffect().kind == vitalfx::EffectKind::kMorph) {
+    // The panel is as tall as any effect; the editor that docks below it while one is open adds to the window.
+    if (view == 1)
+      section_height += m.padding + kMorphAttachmentKnobSections * m.knob_section;
+  }
+  const float height = kTopHeight + m.padding + section_height + m.large_padding;
   // The Tremolo has two extra unit selectors under its knobs, so its window is a little taller than the others.
   const int extra = (vitalfx::thisEffect().kind == vitalfx::EffectKind::kTremolo ||
                        vitalfx::thisEffect().kind == vitalfx::EffectKind::kVibrato) ? kTremoloExtraHeight : 0;
@@ -134,8 +182,84 @@ Point<int> FullInterface::designSizeFor(const Skin& skin) {
 
 Point<int> FullInterface::getDesignSize() {
   Skin skin;
-  return designSizeFor(skin);
+  return designSizeFor(metricsFor(skin), 0);
 }
+
+// The window's proportions follow the live skin and what is open (Morph's editors dock below the panel, or take the
+// whole window): the editor resizes itself when they change.
+void FullInterface::updateDesignSize() {
+  const Point<int> design = designSizeFor(metrics_, view_);
+  if (design == design_size_)
+    return;
+
+  design_size_ = design;
+  if (on_design_size_changed) {
+    Component::SafePointer<FullInterface> safe(this);
+    MessageManager::callAsync([safe, design]() {
+      if (FullInterface* self = safe.getComponent())
+        if (self->on_design_size_changed)
+          self->on_design_size_changed(design);
+    });
+  }
+}
+
+#if VITALFX_HAS_MORPH
+void FullInterface::morphLayoutChanged() {
+  if (morph_section_ == nullptr || view_ == 2)
+    return;
+  view_ = morph_section_->anyAttachmentOpen() ? 1 : 0;
+  updateDesignSize();
+  resized();
+  redoBackground();
+}
+
+void FullInterface::showWavetableEditSection(int index) {
+  if (morph_section_ == nullptr)
+    return;
+
+  ScopedLock lock(open_gl_critical_section_);
+  const bool show_editor = index >= 0 && index < vital::kNumWavetableSlots && wavetable_edits_[index] != nullptr;
+  for (int i = 0; i < vital::kNumWavetableSlots; ++i) {
+    if (wavetable_edits_[i])
+      wavetable_edits_[i]->setVisible(show_editor && i == index);
+  }
+
+  open_table_editor_ = show_editor ? index : -1;
+  header_->setVisible(!show_editor);
+  effect_section_->setVisible(!show_editor);
+  view_ = show_editor ? 2 : (morph_section_->anyAttachmentOpen() ? 1 : 0);
+  updateDesignSize();
+  resized();
+  redoBackground();
+}
+
+void FullInterface::saveWavetable(int index) {
+  if (index < 0 || index >= vital::kNumWavetableSlots || wavetable_edits_[index] == nullptr)
+    return;
+
+  save_section_->setIsPreset(false);
+  save_section_->setSaveBounds();
+  save_section_->setFileExtension(vital::kWavetableExtension);
+  save_section_->setFileType("Wavetable");
+  File destination = LoadSave::getUserWavetableDirectory();
+  if (!destination.exists())
+    destination.createDirectory();
+  save_section_->setDirectory(destination);
+  save_section_->setFileData(getWavetableJson(index));
+  save_section_->setVisible(true);
+}
+
+json FullInterface::getWavetableJson(int index) {
+  if (index >= 0 && index < vital::kNumWavetableSlots && wavetable_edits_[index])
+    return wavetable_edits_[index]->getWavetableJson();
+  return json();
+}
+#else
+void FullInterface::morphLayoutChanged() { }
+void FullInterface::showWavetableEditSection(int) { }
+void FullInterface::saveWavetable(int) { }
+json FullInterface::getWavetableJson(int) { return json(); }
+#endif
 
 void FullInterface::paintBackground(Graphics& g) {
   g.fillAll(findColour(Skin::kBackground, true));
@@ -154,18 +278,8 @@ void FullInterface::setSkinValues(const Skin& skin, bool top_level) {
   // The skin editor can change the spacing values the window's proportions come from (padding, knob section
   // height...). The layout follows the live skin, so the window's aspect ratio has to follow it too, otherwise the
   // interface is letterboxed and no longer scales with the window.
-  const Point<int> design = designSizeFor(skin);
-  if (design != design_size_) {
-    design_size_ = design;
-    if (on_design_size_changed) {
-      Component::SafePointer<FullInterface> safe(this);
-      MessageManager::callAsync([safe, design]() {
-        if (FullInterface* self = safe.getComponent())
-          if (self->on_design_size_changed)
-            self->on_design_size_changed(design);
-      });
-    }
-  }
+  metrics_ = metricsFor(skin);
+  updateDesignSize();
 }
 
 void FullInterface::updateGlow(const Skin& skin) {
@@ -413,11 +527,21 @@ void FullInterface::resized() {
   const int widget_margin = findValue(Skin::kWidgetMargin);
   const int extra_height = (vitalfx::thisEffect().kind == vitalfx::EffectKind::kTremolo ||
                        vitalfx::thisEffect().kind == vitalfx::EffectKind::kVibrato) ? kTremoloExtraHeight * ratio : 0;
-  const int section_height = 2 * knob_section_height - widget_margin + extra_height;
+  int section_height = 2 * knob_section_height - widget_margin + extra_height;
+  if (vitalfx::thisEffect().kind == vitalfx::EffectKind::kMorph) {
+    if (view_ == 1)
+      section_height += padding + static_cast<int>(kMorphAttachmentKnobSections * knob_section_height);
+  }
   Rectangle<int> section_bounds(left + large_padding, top + top_height + padding,
                                 width - 2 * large_padding, section_height);
   effect_section_->setBounds(section_bounds);
-  settings_section_->setBounds(section_bounds);
+  settings_section_->setBounds(section_bounds.withHeight(2 * knob_section_height - widget_margin + extra_height));
+#if VITALFX_HAS_MORPH
+  for (auto& editor : wavetable_edits_) {
+    if (editor)
+      editor->setBounds(left, top, width, height - 2 * top);
+  }
+#endif
 
   about_section_->setBounds(bounds);
   save_section_->setBounds(bounds);

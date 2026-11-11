@@ -8,6 +8,9 @@
 #include "distortion_section.cpp"
 #include "full_interface.h"
 #include "bank_exporter.cpp"
+#if VITALFX_HAS_MORPH
+#include "lfo_section.cpp"
+#endif
 #include "preset_browser.cpp"
 #include "popup_browser.cpp"
 #include "header_section.cpp"

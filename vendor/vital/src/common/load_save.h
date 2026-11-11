@@ -77,6 +77,7 @@ class LoadSave {
     static void loadModulations(SynthBase* synth, const json& modulations);
     static void loadSample(SynthBase* synth, const json& sample);
     static void loadWavetables(SynthBase* synth, const json& wavetables);
+    static void loadSpectralDrawings(SynthBase* synth, const json& settings);
     static void loadLfos(SynthBase* synth, const json& lfos);
     static void loadSaveState(std::map<std::string, String>& save_info, json data);
 

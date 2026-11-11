@@ -173,7 +173,8 @@ namespace strings {
     "utility",
     "freq_shifter",
     "vibrato",
-    "tremolo"
+    "tremolo",
+    "morph"
   };
 
   const std::string kSyncedFrequencyNames[] = {
@@ -290,6 +291,7 @@ namespace strings {
     "FREQ SHIFTER",
     "VIBRATO",
     "TREMOLO",
+    "MORPH",
   };
 
   const std::string kDestinationMenuNames[vital::constants::kNumSourceDestinations + vital::constants::kNumEffects] = {
@@ -312,7 +314,48 @@ namespace strings {
     "Freq Shifter",
     "Vibrato",
     "Tremolo",
+    "Morph",
   };
+
+  // Distortion warp modes of the effect build's input lanes (None first; the sidechain lane offers the first seven).
+  const std::string kWarpNames[] = {
+    "None",
+    "Sync",
+    "Formant",
+    "Quantize",
+    "Bend",
+    "Squeeze",
+    "Pulse",
+    "FM",
+    "RM",
+    "Distort Table"
+  };
+
+  // Spectral morph modes of the effect build's input lanes (the sidechain lane offers all but the last;
+  // Vocode needs the other lane as its modulator).
+  const std::string kFxSpectralNames[] = {
+    "None",
+    "Formant Scale",
+    "Harmonic Stretch",
+    "Inharmonic Stretch",
+    "Smear",
+    "Random Amplitudes",
+    "Low Pass",
+    "High Pass",
+    "Phase Disperse",
+    "Shepard Tone",
+    "Spectral Time Skew",
+    "Spectral Filter",
+    "Spectral Phaser",
+    "Spectral Flanger",
+    "Vocode",
+    "Spectral Table",
+    "Spectral Gate"
+  };
+
+  const std::string kDiceNames[] = { "0%", "100%" };
+
+  const std::string kFftSizeNames[] = { "256", "512", "1024", "2048", "4096", "8192", "16384", "32768" };
 
   const std::string kRateUnitNames[] = {
     "Hz", "Tempo"

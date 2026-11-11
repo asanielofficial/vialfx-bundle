@@ -12,7 +12,8 @@ set(VITAL_CPP
   ${CMAKE_SOURCE_DIR}/core/unity/interface_look_and_feel.cpp
   ${CMAKE_SOURCE_DIR}/core/unity/interface_editor_components.cpp
   ${CMAKE_SOURCE_DIR}/core/unity/interface_editor_sections.cpp
-  ${CMAKE_SOURCE_DIR}/core/unity/interface_editor_sections2.cpp)
+  ${CMAKE_SOURCE_DIR}/core/unity/interface_editor_sections2.cpp
+  ${CMAKE_SOURCE_DIR}/core/unity/interface_wavetable.cpp)
 
 file(GLOB_RECURSE VITAL_DIRS LIST_DIRECTORIES true ${VITAL_SRC}/*)
 set(VITAL_INCLUDE_DIRS ${VITAL_SRC} ${VITAL_DIR}/third_party)
@@ -137,3 +138,4 @@ vitalfx_add_plugin(NAME Utility     EFFECT 10 CODE VfUt)
 vitalfx_add_plugin(NAME FreqShifter EFFECT 11 CODE VfFq PRODUCT "Freq Shifter")
 vitalfx_add_plugin(NAME Vibrato     EFFECT 12 CODE VfVb)
 vitalfx_add_plugin(NAME Tremolo     EFFECT 13 CODE VfTm)
+vitalfx_add_plugin(NAME Morph       EFFECT 14 CODE VfMp)

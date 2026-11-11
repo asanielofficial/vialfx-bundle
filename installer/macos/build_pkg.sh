@@ -4,7 +4,7 @@
 set -euo pipefail
 SRC="$(cd "$1" && pwd)"; OUT="$(cd "$2" && pwd)"; VERSION="${3:-0.1.0}"
 WORK="$(mktemp -d)"
-EFFECTS=(Chorus Compressor Delay Distortion EQ Filter Flanger Phaser Reverb "Pitch Shifter" Utility "Freq Shifter" Vibrato Tremolo)
+EFFECTS=(Chorus Compressor Delay Distortion EQ Filter Flanger Phaser Reverb "Pitch Shifter" Utility "Freq Shifter" Vibrato Tremolo Morph)
 mkdir -p "$WORK/pkgs" "$WORK/resources"
 cp "$SRC/LICENSE" "$WORK/resources/LICENSE.txt"
 

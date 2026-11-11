@@ -117,9 +117,22 @@ void EffectPlugin::prepareToPlay(double sample_rate, int) {
   engine_->updateAllModulationSwitches();
   midi_manager_->setSampleRate(sample_rate);
   engine_->checkOversampling();
+  updateLatency();
 }
 
 void EffectPlugin::releaseResources() { }
+
+// Morph's spectral stage delays the audio by one FFT size while a spectral mode is chosen; the host needs to know
+// so its delay compensation keeps the plugin in time. Re-checked every block (the FFT size and the mode can change).
+void EffectPlugin::updateLatency() {
+  if (static_cast<EffectKind>(VITALFX_EFFECT) != EffectKind::kMorph)
+    return;
+  const int latency = engine_->getLatencySamples();
+  if (latency != last_latency_) {
+    last_latency_ = latency;
+    setLatencySamples(latency);
+  }
+}
 
 void EffectPlugin::processBlock(AudioBuffer<float>& buffer, MidiBuffer& midi_messages) {
   ScopedNoDenormals no_denormals;
@@ -157,6 +170,7 @@ void EffectPlugin::processBlock(AudioBuffer<float>& buffer, MidiBuffer& midi_mes
   }
 
   processModulationChanges();
+  updateLatency();
 
   const bool use_midi = vitalfx::thisEffect().uses_keytrack && settings_.keytrack_from_midi;
   if (use_midi)

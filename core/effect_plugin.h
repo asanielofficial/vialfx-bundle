@@ -57,12 +57,15 @@ class EffectPlugin : public SynthBase, public AudioProcessor, public ValueBridge
     void setKeytrackFromMidi(bool enabled);
 
     bool isEffectParameter(const std::string& name) const;
+    // Reports the spectral stage latency of Morph to the host.
+    void updateLatency();
 
   private:
     static BusesProperties makeBuses();
 
     ValueBridge* bypass_parameter_ = nullptr;
     double last_seconds_time_ = 0.0;
+    int last_latency_ = -1;
     vitalfx::EffectSettings settings_;
     std::map<std::string, ValueBridge*> bridge_lookup_;
     std::vector<vital::poly_float> input_buffer_;

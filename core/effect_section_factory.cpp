@@ -34,6 +34,7 @@ std::unique_ptr<SynthSection> createEffectSection(EffectKind kind, const vital::
     case EffectKind::kFreqShifter: return std::make_unique<FreqShifterSection>("FREQ SHIFTER");
     case EffectKind::kVibrato: return std::make_unique<VibratoSection>("VIBRATO");
     case EffectKind::kTremolo: return std::make_unique<TremoloSection>("TREMOLO");
+    case EffectKind::kMorph:      return nullptr;   // built by FullInterface (it needs the engine and the wavetables)
   }
   return nullptr;
 }

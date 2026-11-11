@@ -44,6 +44,13 @@ namespace vital {
       SynthModule* getEffect(constants::Effect effect) { return effects_[effect]; }
       const StereoMemory* getEqualizerMemory() { return equalizer_memory_; }
 
+      // The Morph effect needs the FFT size (an index, from the engine).
+      void connectMorph(const Processor* fft_size);
+      // Whether the Morph effect is on (a bypassed one costs no latency). Safe from any thread.
+      bool morphOn() const;
+      // The delay Morph adds while on, in host samples.
+      int morphLatencySamples(int fft_index) const;
+
     protected:
       SynthModule* createEffectModule(int index);
 

@@ -27,11 +27,22 @@
 #include "operators.h"
 #include "reorderable_effect_chain.h"
 #include "value_switch.h"
+#include "morph_module.h"
+#include "fx_tables.h"
+#include "wavetable.h"
+#include "line_generator.h"
 
 namespace vital {
 
   SoundEngine::SoundEngine() : SynthModule(0, 1), modulation_handler_(nullptr), 
                                last_oversampling_amount_(-1), last_sample_rate_(-1), peak_meter_(nullptr) {
+    // Morph's two wavetables (distort / spectral) and drawn curves exist before the graph so the module can use them.
+    for (int i = 0; i < 2; ++i) {
+      fx_tables_[i] = std::make_unique<Wavetable>(kNumOscillatorWaveFrames);
+      FxTables::fillWavetable(fx_tables_[i].get(), FxTables::kindOfSlot(i));
+    }
+    for (int i = 0; i < kNumSpectralCurves; ++i)
+      spectral_curves_[i] = std::make_unique<LineGenerator>();
     init();
     bps_ = data_->controls["beats_per_minute"];
     modulation_processors_.reserve(kMaxModulationConnections);
@@ -81,6 +92,8 @@ namespace vital {
     effect_chain_->plug(upsampler_, ReorderableEffectChain::kAudio);
     effect_chain_->plug(effect_chain_order, ReorderableEffectChain::kOrder);
 
+    fft_size_ = createBaseControl("fft_size");
+    effect_chain_->connectMorph(fft_size_);
     SynthModule* compressor = effect_chain_->getEffect(constants::kCompressor);
     createStatusOutput("compressor_low_input", compressor->output(CompressorModule::kLowInputMeanSquared));
     createStatusOutput("compressor_band_input", compressor->output(CompressorModule::kBandInputMeanSquared));
@@ -127,7 +140,15 @@ namespace vital {
     addProcessor(clamp);
     clamp->useOutput(output());
 
-    SynthModule::init();
+    SynthModule::init();   // creates the processors inside the effect modules
+
+    {
+      MorphModule* morph = static_cast<MorphModule*>(effect_chain_->getEffect(constants::kMorph));
+      for (int i = 0; i < kNumSpectralCurves; ++i)
+        morph->setCurve(i, spectral_curves_[i].get());
+      morph->setTables(fx_tables_[0].get(), fx_tables_[1].get());
+    }
+    resetSpectralDrawings();
     disableUnnecessaryModSources();
     setOversamplingAmount(kDefaultOversamplingAmount, kDefaultSampleRate);
   }
@@ -332,7 +353,50 @@ namespace vital {
   }
 
   Wavetable* SoundEngine::getWavetable(int index) {
-    return nullptr;
+    if (index < 0 || index >= 2)
+      return nullptr;
+    return fx_tables_[index].get();
+  }
+
+  int SoundEngine::getLatencySamples() const {
+    if (fft_size_ == nullptr || effect_chain_ == nullptr)
+      return 0;
+    return effect_chain_->morphLatencySamples(static_cast<int>(fft_size_->value() + 0.5f));
+  }
+
+  LineGenerator* SoundEngine::getSpectralCurve(int index) {
+    return spectral_curves_[index].get();
+  }
+
+  void SoundEngine::resetSpectralCurve(int index) {
+    LineGenerator* curve = spectral_curves_[index].get();
+    curve->initLinear();
+    if (index != 1) {
+      // A flat line at the middle (a line generator point is upside down: its value is 1 - y).
+      curve->setNumPoints(2);
+      curve->setPoint(0, { 0.0f, 0.5f });
+      curve->setPoint(1, { 1.0f, 0.5f });
+      curve->setPower(0, 0.0f);
+      curve->setPower(1, 0.0f);
+    }
+    curve->render();
+  }
+
+  void SoundEngine::resetSpectralDrawings() {
+    for (int i = 0; i < kNumSpectralCurves; ++i)
+      resetSpectralCurve(i);
+    setRandomSeed(uint32_t(SpectralMorphProcessor::kDefaultSeed));
+  }
+
+  void SoundEngine::setRandomSeed(uint32_t seed) {
+    if (effect_chain_)
+      static_cast<MorphModule*>(effect_chain_->getEffect(constants::kMorph))->setSeed(seed);
+  }
+
+  uint32_t SoundEngine::getRandomSeed() const {
+    if (effect_chain_ == nullptr)
+      return uint32_t(SpectralMorphProcessor::kDefaultSeed);
+    return static_cast<MorphModule*>(effect_chain_->getEffect(constants::kMorph))->seed();
   }
 
   Sample* SoundEngine::getSample() {

@@ -2,7 +2,7 @@
 
 Vital's effects, each as its own VST3 plugin:
 
-**Vial Chorus · Vial Compressor · Vial Delay · Vial Distortion · Vial EQ · Vial Filter · Vial Flanger · Vial Phaser · Vial Reverb · Vial Pitch Shifter · Vial Utility · Vial Freq Shifter · Vial Vibrato · Vial Tremolo**
+**Vial Chorus · Vial Compressor · Vial Delay · Vial Distortion · Vial EQ · Vial Filter · Vial Flanger · Vial Phaser · Vial Reverb · Vial Pitch Shifter · Vial Utility · Vial Freq Shifter · Vial Vibrato · Vial Tremolo · Vial Morph**
 
 Each plugin is the same module you see on Vital's effects tab, running Vital's own DSP, in its own window with:
 
@@ -45,7 +45,7 @@ old Vital skin designer and is the editor from the main VialFX plugin: it opens 
 of it), stays on top and can be resized.
 
 - **Bins:** the interface is grouped into bins (Header, Effects, Preset Browser, Settings / Overlays) plus a Global bin for the base
-  skin. The Effects bin edits every effect module together and each module (Chorus ... Tremolo) has its own
+  skin. The Effects bin edits every effect module together and each module (Chorus ... Morph) has its own
   sub-bin. **+ Add override** adds more colours or values to a bin.
 - **Colour picker:** hex (AARRGGBB), RGB, alpha, undo/redo, Default (full reset), Save and Import of `.vialskin` files.
 - **Hover outline / Alt inspector:** the selected bin stays outlined in the plugin; hovering the plugin outlines the section and its bin (a bin that is not on screen, such as the preset browser, says so); hold Alt to inspect a single

@@ -30,6 +30,7 @@
 #include "freq_shifter_module.h"
 #include "vibrato_module.h"
 #include "tremolo_module.h"
+#include "morph_module.h"
 #include "synth_strings.h"
 
 namespace vital {
@@ -118,9 +119,25 @@ namespace vital {
         return new VibratoModule(beats_per_second_);
       case constants::kTremolo:
         return new TremoloModule(beats_per_second_);
+      case constants::kMorph:
+        return new MorphModule();
       default:
         return nullptr;
     }
+  }
+
+  void ReorderableEffectChain::connectMorph(const Processor* fft_size) {
+    effects_[constants::kMorph]->plug(fft_size, MorphModule::kFftSize);
+  }
+
+  bool ReorderableEffectChain::morphOn() const {
+    return effects_on_[constants::kMorph]->value() > 0.5f;
+  }
+
+  int ReorderableEffectChain::morphLatencySamples(int fft_index) const {
+    if (!morphOn())
+      return 0;
+    return static_cast<MorphModule*>(effects_[constants::kMorph])->latencySamples(fft_index);
   }
 
   void ReorderableEffectChain::process(int num_samples) {

@@ -12,6 +12,7 @@
 #include "synth_slider.h"
 #include "text_look_and_feel.h"
 #include "text_selector.h"
+#include "open_gl_image_component.h"
 
 namespace {
   const std::string kFrequencyDisplayNames[] = { "Semitones", "Hz" };
@@ -296,6 +297,132 @@ class SettingsSection::KeytrackBox : public SynthSection {
     std::unique_ptr<OpenGlToggleButton> midi_follow_;
 };
 
+// ---- FFT size (Morph only): the size behind the spectral morph, with the latency it adds. The latency is reported
+// to the host, so the DAW's delay compensation keeps the plugin in time; the readout follows the setting live.
+class SettingsSection::FftBox : public SynthSection, private Timer {
+  public:
+    FftBox() : SynthSection("FFT SIZE") {
+      setSidewaysHeading(false);
+
+      for (int i = 0; i < kNumSizes; ++i) {
+        buttons_[i] = std::make_unique<OpenGlToggleButton>("");
+        buttons_[i]->addListener(this);
+        buttons_[i]->setLookAndFeel(TextLookAndFeel::instance());
+        buttons_[i]->setButtonText(String(256 << i));
+        addAndMakeVisible(buttons_[i].get());
+        addOpenGlComponent(buttons_[i]->getGlComponent());
+      }
+
+      latency_text_ = std::make_unique<PlainTextComponent>("Latency Text", "");
+      addOpenGlComponent(latency_text_.get());
+    }
+
+    ~FftBox() { stopTimer(); }
+
+    void setAllValues(vital::control_map& controls) override {
+      SynthSection::setAllValues(controls);
+      auto size = controls.find("fft_size");
+      if (size != controls.end() && size->second)
+        select(static_cast<int>(size->second->value()));
+    }
+
+    void paintBackground(Graphics& g) override {
+      SynthSection::paintBackground(g);
+
+      g.setColour(findColour(Skin::kTextComponentBackground, true));
+      float rounding = findValue(Skin::kLabelBackgroundRounding);
+      for (auto& button : buttons_)
+        g.fillRoundedRectangle(button->getBounds().toFloat(), rounding);
+    }
+
+    void paintBackgroundShadow(Graphics& g) override { paintTabShadow(g); }
+
+    void resized() override {
+      SynthSection::resized();
+
+      int widget_margin = getWidgetMargin();
+      int title_width = getTitleWidth();
+      int x = widget_margin;
+      int y = title_width + widget_margin;
+      int width = getWidth() - 2 * widget_margin;
+      int text_height = std::max(1, static_cast<int>(findValue(Skin::kLabelBackgroundHeight)));
+      // Two rows of four: 256 .. 2048 on top, the larger sizes below.
+      int grid_height = std::max(1, getHeight() - y - text_height - 2 * widget_margin);
+      int button_height = std::max(1, (grid_height - (kNumRows - 1) * widget_margin) / kNumRows);
+      int button_width = (width - (kNumColumns - 1) * widget_margin) / kNumColumns;
+      for (int i = 0; i < kNumSizes; ++i) {
+        int column = i % kNumColumns, row = i / kNumColumns;
+        buttons_[i]->setBounds(x + column * (button_width + widget_margin),
+                               y + row * (button_height + widget_margin), button_width, button_height);
+      }
+
+      latency_text_->setBounds(x, y + grid_height + widget_margin, width, text_height);
+      latency_text_->setTextSize(findValue(Skin::kLabelHeight));
+      latency_text_->setColor(findColour(Skin::kBodyText, true));
+    }
+
+    void visibilityChanged() override {
+      SynthSection::visibilityChanged();
+      if (isShowing())
+        startTimerHz(8);
+      else
+        stopTimer();
+    }
+
+    void buttonClicked(Button* clicked_button) override {
+      for (int i = 0; i < kNumSizes; ++i) {
+        if (clicked_button == buttons_[i].get()) {
+          SynthGuiInterface* parent = findParentComponentOfClass<SynthGuiInterface>();
+          if (parent)
+            parent->getSynth()->valueChangedInternal("fft_size", i);
+          select(i);
+          return;
+        }
+      }
+    }
+
+  private:
+    static constexpr int kNumColumns = 4;
+    static constexpr int kNumRows = 2;
+    static constexpr int kNumSizes = kNumColumns * kNumRows;
+
+    void timerCallback() override {
+      SynthGuiInterface* parent = findParentComponentOfClass<SynthGuiInterface>();
+      if (parent == nullptr || parent->getSynth() == nullptr)
+        return;
+
+      auto& controls = parent->getSynth()->getControls();
+      auto size = controls.find("fft_size");
+      if (size != controls.end() && size->second)
+        select(static_cast<int>(size->second->value() + 0.5f));
+    }
+
+    void select(int index) {
+      index = std::max(0, std::min(index, kNumSizes - 1));
+      for (int i = 0; i < kNumSizes; ++i)
+        buttons_[i]->setToggleState(i == index, NotificationType::dontSendNotification);
+
+      int samples = 256 << index;
+      int sample_rate = 44100;
+      SynthGuiInterface* parent = findParentComponentOfClass<SynthGuiInterface>();
+      if (parent && parent->getSynth() && parent->getSynth()->getSampleRate() > 0)
+        sample_rate = parent->getSynth()->getSampleRate();
+
+      String text = "Latency: " + String(samples) + " samples (" +
+                    String(1000.0 * samples / sample_rate, 1) + " ms)";
+      if (text != shown_text_) {
+        shown_text_ = text;
+        latency_text_->setText(text.toStdString());
+      }
+    }
+
+    std::unique_ptr<OpenGlToggleButton> buttons_[kNumSizes];
+    std::unique_ptr<PlainTextComponent> latency_text_;
+    String shown_text_;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FftBox)
+};
+
 // ---- The page ------------------------------------------------------------------------------------------
 SettingsSection::SettingsSection() : SynthSection("settings") {
   setSkinOverride(Skin::kAdvanced);
@@ -308,6 +435,11 @@ SettingsSection::SettingsSection() : SynthSection("settings") {
   if (vitalfx::thisEffect().uses_keytrack) {
     keytrack_ = std::make_unique<KeytrackBox>();
     addSubSection(keytrack_.get());
+  }
+
+  if (vitalfx::thisEffect().kind == vitalfx::EffectKind::kMorph) {
+    fft_ = std::make_unique<FftBox>();
+    addSubSection(fft_.get());
   }
 }
 
@@ -322,7 +454,7 @@ void SettingsSection::paintBackground(Graphics& g) {
 
 void SettingsSection::resized() {
   const int padding = getPadding();
-  const int boxes = keytrack_ ? 3 : 2;
+  const int boxes = (keytrack_ || fft_) ? 3 : 2;
   const int box_width = (getWidth() - (boxes - 1) * padding) / boxes;
 
   int x = 0;
@@ -332,6 +464,10 @@ void SettingsSection::resized() {
   if (keytrack_) {
     x += box_width + padding;
     keytrack_->setBounds(x, 0, getWidth() - x, getHeight());
+  }
+  if (fft_) {
+    x += box_width + padding;
+    fft_->setBounds(x, 0, getWidth() - x, getHeight());
   }
 
   SynthSection::resized();

@@ -21,7 +21,7 @@ permissions:
   contents: read
 
 env:
-  PLUGINS: Chorus Compressor Delay Distortion EQ Filter Flanger FreqShifter Phaser PitchShifter Reverb Tremolo Utility Vibrato
+  PLUGINS: Chorus Compressor Delay Distortion EQ Filter Flanger FreqShifter Morph Phaser PitchShifter Reverb Tremolo Utility Vibrato
 
 jobs:
   linux:

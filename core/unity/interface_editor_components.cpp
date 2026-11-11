@@ -2,10 +2,18 @@
 // Vital's headers are not self-contained; they rely on this include order.
 #include "vitalfx_prelude.h"
 
+#if VITALFX_HAS_MORPH
+#include "lfo_editor.cpp"
+#include "line_map_editor.cpp"
+#include "line_editor.cpp"
+#endif
 #include "synth_button.cpp"
 #include "synth_preset_selector.cpp"
 #include "preset_selector.cpp"
 #include "tab_selector.cpp"
+#if VITALFX_HAS_MORPH
+#include "wavetable_3d.cpp"
+#endif
 #include "bar_renderer.cpp"
 #include "open_gl_image.cpp"
 #include "open_gl_image_component.cpp"

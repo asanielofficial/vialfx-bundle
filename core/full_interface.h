@@ -14,8 +14,11 @@
 #include "shaders.h"
 #include "synth_section.h"
 #include "wavetable_creator.h"
+#include "synth_constants.h"
 
 class AboutSection;
+class MorphEffectSection;
+class WavetableEditSection;
 class DeleteSection;
 class PresetBrowser;
 class SaveSection;
@@ -29,6 +32,11 @@ class FullInterface : public SynthSection, public EffectHeader::Listener,
     static constexpr int kTopHeight = 48;
     static constexpr float kDesignWidth = 600.0f;
     static constexpr int kTremoloExtraHeight = 44;   // room for the unit selectors under the knobs
+    // Morph: the editor that docks under the panel is about this many knob sections tall.
+    static constexpr float kMorphAttachmentKnobSections = 3.3f;
+    // Morph's wavetable editors take the whole window, at this design size.
+    static constexpr int kWavetableEditorWidth = 880;
+    static constexpr int kWavetableEditorHeight = 620;
 
     explicit FullInterface(SynthGuiData* synth_gui_data);
     ~FullInterface() override;
@@ -106,6 +114,14 @@ class FullInterface : public SynthSection, public EffectHeader::Listener,
     void signOut() { }
     void saveLfo(const json&) { }
 
+    // Morph: the wavetable editors open over the whole window (slot 0 = Distort Table, 1 = Spectral Table).
+    void showWavetableEditSection(int index);
+    void hideWavetableEditSection() { showWavetableEditSection(-1); }
+    void saveWavetable(int index);
+    json getWavetableJson(int index);
+    // Morph: an editor docked under / undocked from the panel; the window grows or shrinks with it.
+    void morphLayoutChanged();
+
     void enableRedoBackground(bool enable) {
       enable_redo_background_ = enable;
       if (enable)
@@ -120,8 +136,22 @@ class FullInterface : public SynthSection, public EffectHeader::Listener,
     std::function<void(Point<int>)> on_design_size_changed;
 
   private:
-    static Point<int> designSizeFor(const Skin& skin);
+    // The spacing values the window's proportions come from.
+    struct DesignMetrics {
+      float knob_section = 0.0f, widget_margin = 0.0f, large_padding = 0.0f, padding = 0.0f;
+    };
+    // view: 0 = the effect alone, 1 = Morph with an editor docked below, 2 = Morph's wavetable editor.
+    static Point<int> designSizeFor(const DesignMetrics& metrics, int view);
+    static DesignMetrics metricsFor(const Skin& skin);
+    void updateDesignSize();
     Point<int> design_size_;
+    DesignMetrics metrics_;
+    int view_ = 0;
+#if VITALFX_HAS_MORPH
+    MorphEffectSection* morph_section_ = nullptr;
+    std::unique_ptr<WavetableEditSection> wavetable_edits_[vital::kNumWavetableSlots];
+#endif
+    int open_table_editor_ = -1;
     void timerCallback() override;   // picks up skins synced from other VialFX plugins
     Time bundle_skin_applied_;
     std::unique_ptr<EffectHeader> header_;

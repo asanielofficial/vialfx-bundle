@@ -82,8 +82,8 @@ jobs:
         run: |
           $list = "${{ inputs.plugin }}"
           if ($list -eq "all") { $list = $env:PLUGINS }
-          $targets = $list -split '\s+' | Where-Object { $_ } | ForEach-Object { "${_}_VST3" }
-          cmake --build build --target @targets
+          $targets = @($list -split '\s+' | Where-Object { $_ } | ForEach-Object { "${_}_VST3" })
+          cmake --build build --target $targets
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Zip

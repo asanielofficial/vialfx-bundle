@@ -1,8 +1,8 @@
 #!/bin/bash
-# Build VialFX-Bundle-Setup-macos.pkg from a folder containing VST3/ and CLAP/ (plus LICENSE).
+# Build VialFX-Bundle-$VERSION-Setup-macos.pkg from a folder containing VST3/ and CLAP/ (plus LICENSE).
 # Usage: installer/macos/build_pkg.sh <bundle-dir> <output-dir> [version]
 set -euo pipefail
-SRC="$(cd "$1" && pwd)"; OUT="$(cd "$2" && pwd)"; VERSION="${3:-0.1.0}"
+SRC="$(cd "$1" && pwd)"; OUT="$(cd "$2" && pwd)"; VERSION="${3:-1.0}"
 WORK="$(mktemp -d)"
 EFFECTS=(Chorus Compressor Delay Distortion EQ Filter Flanger Phaser Reverb "Pitch Shifter" Utility "Freq Shifter" Vibrato Tremolo Morph)
 mkdir -p "$WORK/pkgs" "$WORK/resources"
@@ -27,7 +27,7 @@ build_component clap clap "/Library/Audio/Plug-Ins/CLAP"
 {
   echo '<?xml version="1.0" encoding="utf-8"?>'
   echo '<installer-gui-script minSpecVersion="1">'
-  echo '  <title>VialFX-Bundle</title>'
+  echo '  <title>VialFX-Bundle $VERSION</title>'
   echo '  <license file="LICENSE.txt"/>'
   echo '  <options customize="always" require-scripts="false" hostArchitectures="x86_64,arm64"/>'
   echo '  <choices-outline>'
@@ -50,6 +50,6 @@ build_component clap clap "/Library/Audio/Plug-Ins/CLAP"
 } > "$WORK/distribution.xml"
 
 productbuild --distribution "$WORK/distribution.xml" --package-path "$WORK/pkgs" \
-             --resources "$WORK/resources" "$OUT/VialFX-Bundle-Setup-macos.pkg"
+             --resources "$WORK/resources" "$OUT/VialFX-Bundle-$VERSION-Setup-macos.pkg"
 rm -rf "$WORK"
-echo "Built $OUT/VialFX-Bundle-Setup-macos.pkg"
+echo "Built $OUT/VialFX-Bundle-$VERSION-Setup-macos.pkg"

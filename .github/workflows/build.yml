@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  VERSION: "1.0"
+
 jobs:
   linux:
     runs-on: ubuntu-22.04
@@ -79,12 +82,12 @@ jobs:
           cp -r build/plugins/*_artefacts/Release/VST3/*.vst3 VialFX-Bundle/VST3/
           cp build/plugins/*_artefacts/Release/CLAP/*.clap VialFX-Bundle/CLAP/
           cp LICENSE VialFX-Bundle/
-          tar czf VialFX-Bundle-linux.tar.gz VialFX-Bundle
+          tar czf VialFX-Bundle-${{ env.VERSION }}-linux.tar.gz VialFX-Bundle
 
       - uses: actions/upload-artifact@v4
         with:
           name: dist-linux
-          path: VialFX-Bundle-linux.tar.gz
+          path: VialFX-Bundle-${{ env.VERSION }}-linux.tar.gz
 
   windows:
     runs-on: windows-2022
@@ -106,12 +109,12 @@ jobs:
           Get-ChildItem build/plugins/*_artefacts/Release/VST3/*.vst3 | Copy-Item -Destination VialFX-Bundle/VST3 -Recurse
           Get-ChildItem build/plugins/*_artefacts/Release/CLAP/*.clap | Copy-Item -Destination VialFX-Bundle/CLAP
           Copy-Item LICENSE VialFX-Bundle/
-          Compress-Archive -Path VialFX-Bundle -DestinationPath VialFX-Bundle-windows.zip
+          Compress-Archive -Path VialFX-Bundle -DestinationPath VialFX-Bundle-${{ env.VERSION }}-windows.zip
 
       - uses: actions/upload-artifact@v4
         with:
           name: dist-windows-zip
-          path: VialFX-Bundle-windows.zip
+          path: VialFX-Bundle-${{ env.VERSION }}-windows.zip
 
       - name: Build installer
         shell: pwsh
@@ -124,7 +127,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: dist-windows-installer
-          path: VialFX-Bundle-Setup-windows.exe
+          path: VialFX-Bundle-${{ env.VERSION }}-Setup-windows.exe
 
   macos:
     runs-on: macos-15
@@ -151,20 +154,20 @@ jobs:
           cp -R build/plugins/*_artefacts/Release/CLAP/*.clap VialFX-Bundle/CLAP/
           for p in VialFX-Bundle/VST3/*.vst3 VialFX-Bundle/CLAP/*.clap; do codesign --force --deep -s - "$p"; done
           cp LICENSE VialFX-Bundle/
-          ditto -c -k --keepParent VialFX-Bundle VialFX-Bundle-macos.zip
+          ditto -c -k --keepParent VialFX-Bundle VialFX-Bundle-${{ env.VERSION }}-macos.zip
 
       - uses: actions/upload-artifact@v4
         with:
           name: dist-macos-zip
-          path: VialFX-Bundle-macos.zip
+          path: VialFX-Bundle-${{ env.VERSION }}-macos.zip
 
       - name: Build installer (.pkg)
-        run: installer/macos/build_pkg.sh VialFX-Bundle . 0.1.0
+        run: installer/macos/build_pkg.sh VialFX-Bundle . ${{ env.VERSION }}
 
       - uses: actions/upload-artifact@v4
         with:
           name: dist-macos-installer
-          path: VialFX-Bundle-Setup-macos.pkg
+          path: VialFX-Bundle-${{ env.VERSION }}-Setup-macos.pkg
 
   # GitHub always wraps workflow artifacts in a .zip. To hand users the real files (tar.gz, zip, .exe, .pkg)
   # without that extra layer, every push to main refreshes a "nightly" pre-release with the files as assets.
@@ -190,5 +193,5 @@ jobs:
           ls -l dist
           gh release delete nightly --yes --cleanup-tag || true
           gh release create nightly dist/* --prerelease --target "$GITHUB_SHA" \
-            --title "Latest build (main)" \
-            --notes "Automated build of commit $GITHUB_SHA. Installers: VialFX-Bundle-Setup-windows.exe and VialFX-Bundle-Setup-macos.pkg. Manual installs: VialFX-Bundle-linux.tar.gz, VialFX-Bundle-windows.zip, VialFX-Bundle-macos.zip."
+            --title "VialFX-Bundle ${{ env.VERSION }} - latest build (main)" \
+            --notes "Automated build of commit $GITHUB_SHA. Installers: VialFX-Bundle-${{ env.VERSION }}-Setup-windows.exe and VialFX-Bundle-${{ env.VERSION }}-Setup-macos.pkg. Manual installs: VialFX-Bundle-${{ env.VERSION }}-linux.tar.gz, VialFX-Bundle-${{ env.VERSION }}-windows.zip, VialFX-Bundle-${{ env.VERSION }}-macos.zip."

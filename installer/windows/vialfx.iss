@@ -6,12 +6,16 @@
 #ifndef OutputDir
   #define OutputDir "."
 #endif
-#define AppVersion "0.1.0"
+#define AppVersion "1.0"
 
 [Setup]
 AppId={{6B0E7C52-2F43-4A57-9D5C-1A7F4E5B9C31}
 AppName=VialFX-Bundle
 AppVersion={#AppVersion}
+AppVerName=VialFX-Bundle {#AppVersion}
+VersionInfoVersion=1.0.0.0
+VersionInfoProductName=VialFX-Bundle
+VersionInfoProductVersion={#AppVersion}
 AppPublisher=VialFX
 AppPublisherURL=https://github.com/asanielofficial/vialfx-bundle
 DefaultDirName={commoncf64}\VialFX
@@ -22,12 +26,12 @@ ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 LicenseFile={#SourceDir}\LICENSE
 OutputDir={#OutputDir}
-OutputBaseFilename=VialFX-Bundle-Setup-windows
+OutputBaseFilename=VialFX-Bundle-{#AppVersion}-Setup-windows
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 UninstallFilesDir={commonappdata}\VialFX\Uninstall
-UninstallDisplayName=VialFX-Bundle (Vital-based effects)
+UninstallDisplayName=VialFX-Bundle {#AppVersion} (Vital-based effects)
 
 [Types]
 Name: "full"; Description: "Full installation (all plugins)"

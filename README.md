@@ -7,7 +7,7 @@ Utility, Freq Shifter, Vibrato, Tremolo and Morph.** It is built from GPLv3 sour
 [License](#license) for the origin of the code) and shares its look, skins and presets with the main
 [VialFX](https://github.com/asanielofficial/vialfx) plugin.
 
-> **Status:** version 1.0, the first official release. VST3 and CLAP builds for Windows, Linux and macOS, plus a
+> **Status:** version 1.1. VST3 and CLAP builds for Windows, Linux and macOS, plus a
 > Windows installer (.exe) and a macOS installer (.pkg), are produced by CI. Windows and Linux are tested by hand;
 > the macOS builds (universal Intel + Apple Silicon, ad-hoc signed) are built by CI and have had limited testing on
 > hardware.
@@ -17,14 +17,14 @@ Utility, Freq Shifter, Vibrato, Tremolo and Morph.** It is built from GPLv3 sour
 
 ## Download
 
-The current stable version is [**VialFX-Bundle 1.0**](https://github.com/asanielofficial/vialfx-bundle/releases/latest):
+The current stable version is [**VialFX-Bundle 1.1**](https://github.com/asanielofficial/vialfx-bundle/releases/latest):
 
 | File | What it is |
 |---|---|
-| `VialFX-Bundle-1.0-Setup-windows.exe` | Windows installer: pick the plugins and the formats (VST3, CLAP) you want |
-| `VialFX-Bundle-1.0-Setup-macos.pkg` | macOS installer: pick the plugins and formats |
-| `VialFX-Bundle-1.0-linux.tar.gz` | Linux VST3 + CLAP (copy into `~/.vst3` and `~/.clap`) |
-| `VialFX-Bundle-1.0-windows.zip`, `VialFX-Bundle-1.0-macos.zip` | Manual-install archives |
+| `VialFX-Bundle-1.1-Setup-windows.exe` | Windows installer: pick the plugins and the formats (VST3, CLAP) you want |
+| `VialFX-Bundle-1.1-Setup-macos.pkg` | macOS installer: pick the plugins and formats |
+| `VialFX-Bundle-1.1-linux.tar.gz` | Linux VST3 + CLAP (copy into `~/.vst3` and `~/.clap`) |
+| `VialFX-Bundle-1.1-windows.zip`, `VialFX-Bundle-1.1-macos.zip` | Manual-install archives |
 
 The newest `main` build is published as the [nightly pre-release](https://github.com/asanielofficial/vialfx-bundle/releases/tag/nightly).
 These builds are unsigned (macOS: ad-hoc signed) and meant for testing; on macOS you may need to allow them in
@@ -32,16 +32,16 @@ System Settings > Privacy & Security the first time.
 
 ## Installing
 
-- **Windows:** run `VialFX-Bundle-1.0-Setup-windows.exe`. Tick the plugins you want (each plugin is its own entry) and
+- **Windows:** run `VialFX-Bundle-1.1-Setup-windows.exe`. Tick the plugins you want (each plugin is its own entry) and
   whether to install VST3, CLAP or both. VST3 goes to `C:\Program Files\Common Files\VST3`, CLAP to
   `C:\Program Files\Common Files\CLAP`. Windows SmartScreen may warn about the unsigned installer: choose *More
   info > Run anyway*.
-- **macOS:** open `VialFX-Bundle-1.0-Setup-macos.pkg`, choose *Customize* to pick plugins and formats. Plugins go to
+- **macOS:** open `VialFX-Bundle-1.1-Setup-macos.pkg`, choose *Customize* to pick plugins and formats. Plugins go to
   `/Library/Audio/Plug-Ins/VST3` and `/Library/Audio/Plug-Ins/CLAP`. The package is unsigned: right-click it and
   choose *Open* the first time.
-- **Linux:** unpack `VialFX-Bundle-1.0-linux.tar.gz` and copy the `.vst3` folders to `~/.vst3` and the `.clap` files to
+- **Linux:** unpack `VialFX-Bundle-1.1-linux.tar.gz` and copy the `.vst3` folders to `~/.vst3` and the `.clap` files to
   `~/.clap`.
-- **Manual (zip):** copy the `.vst3` folders and `.clap` files from `VialFX-Bundle-1.0-windows.zip` or
+- **Manual (zip):** copy the `.vst3` folders and `.clap` files from `VialFX-Bundle-1.1-windows.zip` or
   `-macos.zip` into your system plugin folders, then rescan in your DAW.
 
 Plugins are named **Vial Chorus, Vial Compressor** and so on, so they sort together in your plugin list. To remove

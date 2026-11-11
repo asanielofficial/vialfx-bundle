@@ -2,7 +2,7 @@ name: Publish release
 
 # Publishes a version release (and its tag) from the artifacts of an already finished, successful
 # "Build VialFX-Bundle" run, so the files are exactly the ones that were built and tested. Run it from the Actions
-# tab with the run id and the tag (for example v1.0). The release text is RELEASE_NOTES.md.
+# tab with the run id and the tag (for example v1.1). The release text is RELEASE_NOTES.md.
 on:
   workflow_dispatch:
     inputs:
@@ -13,7 +13,7 @@ on:
       tag:
         description: "Release tag"
         type: string
-        default: v1.0
+        default: v1.1
 
 permissions:
   contents: write
@@ -41,5 +41,5 @@ jobs:
           sha=$(gh run view "${{ inputs.run_id }}" --repo "$GITHUB_REPOSITORY" --json headSha -q .headSha)
           gh release delete "${{ inputs.tag }}" --yes --cleanup-tag || true
           gh release create "${{ inputs.tag }}" dist/* --target "$sha" --latest \
-            --title "VialFX-Bundle 1.0" \
+            --title "VialFX-Bundle 1.1" \
             --notes-file RELEASE_NOTES.md

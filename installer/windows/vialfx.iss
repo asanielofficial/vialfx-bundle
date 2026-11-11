@@ -6,14 +6,14 @@
 #ifndef OutputDir
   #define OutputDir "."
 #endif
-#define AppVersion "1.0"
+#define AppVersion "1.1"
 
 [Setup]
 AppId={{6B0E7C52-2F43-4A57-9D5C-1A7F4E5B9C31}
 AppName=VialFX-Bundle
 AppVersion={#AppVersion}
 AppVerName=VialFX-Bundle {#AppVersion}
-VersionInfoVersion=1.0.0.0
+VersionInfoVersion=1.1.0.0
 VersionInfoProductName=VialFX-Bundle
 VersionInfoProductVersion={#AppVersion}
 VersionInfoDescription=VialFX-Bundle {#AppVersion} Setup

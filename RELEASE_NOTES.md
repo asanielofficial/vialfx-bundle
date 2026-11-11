@@ -1,17 +1,27 @@
-# VialFX-Bundle 1.0
+# VialFX-Bundle 1.1
 
-The first official release: fifteen audio effect plugins, each one its own plugin in its own window, built from
-the effects of the open-source synthesizer Vital and a few new ones in the same style. VST3 and CLAP for Windows,
-Linux and macOS.
+Fifteen audio effect plugins, each one its own plugin in its own window, built from the effects of the open-source
+synthesizer Vital and a few new ones in the same style. VST3 and CLAP for Windows, Linux and macOS.
+
+## What's new in 1.1
+
+- **Vial Distortion** gains three new types: **Tube** (asymmetric, even harmonics), **Saturator** (smooth cubic) and
+  **Overdrive** (exponential soft clip, with a **Stages** knob).
+- **Vial Filter** gains the **Other** filter category: Band Reject, All-Pass, Metal Comb, Metal Reverb, Disperser and a
+  drawable **Custom** filter (three response curves A, B, C morphed by the blend slider, edited with the pencil on
+  the response display and saved with the preset). Every filter model now has a drive knob.
+- **Vial Morph:** two docked editors now open side by side without overlapping, and the curve editor's toolbar
+  fits at half width.
+- Fixes to the Test build workflow and the macOS installer title.
 
 ## Downloads
 
 | File | What it is |
 |---|---|
-| `VialFX-Bundle-1.0-Setup-windows.exe` | Windows installer: choose plugins and formats (VST3, CLAP) |
-| `VialFX-Bundle-1.0-Setup-macos.pkg` | macOS installer (universal Intel + Apple Silicon): choose plugins and formats |
-| `VialFX-Bundle-1.0-linux.tar.gz` | Linux VST3 + CLAP |
-| `VialFX-Bundle-1.0-windows.zip`, `VialFX-Bundle-1.0-macos.zip` | Manual-install archives |
+| `VialFX-Bundle-1.1-Setup-windows.exe` | Windows installer: choose plugins and formats (VST3, CLAP) |
+| `VialFX-Bundle-1.1-Setup-macos.pkg` | macOS installer (universal Intel + Apple Silicon): choose plugins and formats |
+| `VialFX-Bundle-1.1-linux.tar.gz` | Linux VST3 + CLAP |
+| `VialFX-Bundle-1.1-windows.zip`, `VialFX-Bundle-1.1-macos.zip` | Manual-install archives |
 
 Builds are unsigned (macOS: ad-hoc signed). Windows: *More info > Run anyway* on the SmartScreen prompt. macOS:
 right-click the installer and choose *Open*. See the README for install locations.

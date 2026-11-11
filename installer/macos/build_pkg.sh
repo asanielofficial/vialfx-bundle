@@ -27,7 +27,7 @@ build_component clap clap "/Library/Audio/Plug-Ins/CLAP"
 {
   echo '<?xml version="1.0" encoding="utf-8"?>'
   echo '<installer-gui-script minSpecVersion="1">'
-  echo '  <title>VialFX-Bundle $VERSION</title>'
+  echo "  <title>VialFX-Bundle $VERSION</title>"
   echo '  <license file="LICENSE.txt"/>'
   echo '  <options customize="always" require-scripts="false" hostArchitectures="x86_64,arm64"/>'
   echo '  <choices-outline>'

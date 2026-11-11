@@ -16,6 +16,7 @@ AppVerName=VialFX-Bundle {#AppVersion}
 VersionInfoVersion=1.0.0.0
 VersionInfoProductName=VialFX-Bundle
 VersionInfoProductVersion={#AppVersion}
+VersionInfoDescription=VialFX-Bundle {#AppVersion} Setup
 AppPublisher=VialFX
 AppPublisherURL=https://github.com/asanielofficial/vialfx-bundle
 DefaultDirName={commoncf64}\VialFX
@@ -31,7 +32,7 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 UninstallFilesDir={commonappdata}\VialFX\Uninstall
-UninstallDisplayName=VialFX-Bundle {#AppVersion} (Vital-based effects)
+UninstallDisplayName=VialFX-Bundle {#AppVersion}
 
 [Types]
 Name: "full"; Description: "Full installation (all plugins)"

@@ -5,6 +5,8 @@ name: Build VialFX-Bundle
 # not start them; use "Test build" for a quick portable Windows or Linux build of a change.
 on:
   workflow_dispatch:
+  push:
+    tags: [ "v*" ]   # a version tag (v1.0) builds everything and publishes the release for it
 
 permissions:
   contents: read
@@ -173,7 +175,7 @@ jobs:
   # without that extra layer, every push to main refreshes a "nightly" pre-release with the files as assets.
   release:
     needs: [linux, windows, macos]
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -187,6 +189,7 @@ jobs:
           merge-multiple: true
 
       - name: Publish nightly release
+        if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -194,4 +197,16 @@ jobs:
           gh release delete nightly --yes --cleanup-tag || true
           gh release create nightly dist/* --prerelease --target "$GITHUB_SHA" \
             --title "VialFX-Bundle ${{ env.VERSION }} - latest build (main)" \
-            --notes "Automated build of commit $GITHUB_SHA. Installers: VialFX-Bundle-${{ env.VERSION }}-Setup-windows.exe and VialFX-Bundle-${{ env.VERSION }}-Setup-macos.pkg. Manual installs: VialFX-Bundle-${{ env.VERSION }}-linux.tar.gz, VialFX-Bundle-${{ env.VERSION }}-windows.zip, VialFX-Bundle-${{ env.VERSION }}-macos.zip."
+            --notes "Automated build of commit $GITHUB_SHA. Installers: VialFX-Bundle-${{ env.VERSION }}-Setup-windows.exe and VialFX-Bundle-${{ env.VERSION }}-Setup-macos.pkg. Manual installs: VialFX-Bundle-${{ env.VERSION }}-linux.tar.gz, VialFX-Bundle-${{ env.VERSION }}-windows.zip, VialFX-Bundle-${{ env.VERSION }}-macos.zip. Unsigned test build; see the latest stable release for the supported version."
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -l dist
+          tag="${GITHUB_REF_NAME}"
+          gh release delete "$tag" --yes || true
+          gh release create "$tag" dist/* --verify-tag --latest \
+            --title "VialFX-Bundle ${{ env.VERSION }}" \
+            --notes-file RELEASE_NOTES.md

@@ -236,7 +236,7 @@ class FxMorphSection : public SynthSection {
       const float footprint_size = findValue(Skin::kKnobModAmountArcSize);
       const float area_h = static_cast<float>(cell.getHeight()) - label_height;   // the mode selector takes the bottom
       float mix_footprint = std::min(area_h - strip_h - pill_gap, (cell_w - dice_size - 4.0f * pill_gap) * 0.5f * 0.96f);
-      float scale = std::max(0.3f, mix_footprint / footprint_size);
+      float scale = std::max(0.3f, 0.72f * mix_footprint / footprint_size);   // smaller knobs leave the row breathing room
       int knob_d = static_cast<int>(footprint_size * scale);
       spectral_morph_->setKnobSizeScale(scale);
       shuffle_->setKnobSizeScale(scale);

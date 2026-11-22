@@ -1,27 +1,30 @@
-# VialFX-Bundle 1.1
+# VialFX-Bundle 1.2
 
 Fifteen audio effect plugins, each one its own plugin in its own window, built from the effects of the open-source
 synthesizer Vital and a few new ones in the same style. VST3 and CLAP for Windows, Linux and macOS.
 
-## What's new in 1.1
+## What's new in 1.2
 
-- **Vial Distortion** gains three new types: **Tube** (asymmetric, even harmonics), **Saturator** (smooth cubic) and
-  **Overdrive** (exponential soft clip, with a **Stages** knob).
-- **Vial Filter** gains the **Other** filter category: Band Reject, All-Pass, Metal Comb, Metal Reverb, Disperser and a
-  drawable **Custom** filter (three response curves A, B, C morphed by the blend slider, edited with the pencil on
-  the response display and saved with the preset). Every filter model now has a drive knob.
-- **Vial Morph:** two docked editors now open side by side without overlapping, and the curve editor's toolbar
-  fits at half width.
-- Fixes to the Test build workflow and the macOS installer title.
+- **Vial Morph, Random Amplitudes** (ported from VialSynth): a stronger amount range (the top setting leaves about an
+  eighth of the bins standing), a pattern that holds still while the amount moves, and a new layout with **MIX** and
+  **SHUFFLE** knobs, labelled pills, and room for the mode selector. The **dice** is now a real, automatable parameter:
+  a click rolls a new seed, and a value flip from automation does the same.
+
+## What was new in 1.1
+
+- **Vial Distortion:** new types **Tube**, **Saturator** and **Overdrive** (with a **Stages** knob).
+- **Vial Filter:** the **Other** category (Band Reject, All-Pass, Metal Comb, Metal Reverb, Disperser and a drawable
+  **Custom** filter) and a drive knob on every model.
+- **Vial Morph:** docked editors open side by side, and the curve editor's toolbar fits at half width.
 
 ## Downloads
 
 | File | What it is |
 |---|---|
-| `VialFX-Bundle-1.1-Setup-windows.exe` | Windows installer: choose plugins and formats (VST3, CLAP) |
-| `VialFX-Bundle-1.1-Setup-macos.pkg` | macOS installer (universal Intel + Apple Silicon): choose plugins and formats |
-| `VialFX-Bundle-1.1-linux.tar.gz` | Linux VST3 + CLAP |
-| `VialFX-Bundle-1.1-windows.zip`, `VialFX-Bundle-1.1-macos.zip` | Manual-install archives |
+| `VialFX-Bundle-1.2-Setup-windows.exe` | Windows installer: choose plugins and formats (VST3, CLAP) |
+| `VialFX-Bundle-1.2-Setup-macos.pkg` | macOS installer (universal Intel + Apple Silicon): choose plugins and formats |
+| `VialFX-Bundle-1.2-linux.tar.gz` | Linux VST3 + CLAP |
+| `VialFX-Bundle-1.2-windows.zip`, `VialFX-Bundle-1.2-macos.zip` | Manual-install archives |
 
 Builds are unsigned (macOS: ad-hoc signed). Windows: *More info > Run anyway* on the SmartScreen prompt. macOS:
 right-click the installer and choose *Open*. See the README for install locations.

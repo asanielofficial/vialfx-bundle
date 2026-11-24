@@ -29,6 +29,7 @@
 #include "utility_module.h"
 #include "freq_shifter_module.h"
 #include "vibrato_module.h"
+#include "resonator_module.h"
 #include "tremolo_module.h"
 #include "morph_module.h"
 #include "synth_strings.h"
@@ -69,9 +70,9 @@ namespace vital {
       Output input_;
   };
 
-  ReorderableEffectChain::ReorderableEffectChain(const Output* beats_per_second, const Output* keytrack) :
+  ReorderableEffectChain::ReorderableEffectChain(const Output* beats_per_second, const Output* keytrack, ResonatorMidi* resonator_midi) :
       vital::SynthModule(kNumInputs, 1), equalizer_memory_(nullptr),
-      beats_per_second_(beats_per_second), keytrack_(keytrack), last_order_(0.0f) {
+      beats_per_second_(beats_per_second), keytrack_(keytrack), resonator_midi_(resonator_midi), last_order_(0.0f) {
     for (int i = 0; i < constants::kNumEffects; ++i) {
       SynthModule* effect_module = createEffectModule(i);
       VITAL_ASSERT(effect_module);
@@ -121,9 +122,15 @@ namespace vital {
         return new TremoloModule(beats_per_second_);
       case constants::kMorph:
         return new MorphModule();
+      case constants::kResonator:
+        return new ResonatorModule(resonator_midi_);
       default:
         return nullptr;
     }
+  }
+
+  void ReorderableEffectChain::setResonatorTuning(const Tuning* tuning) {
+    static_cast<ResonatorModule*>(effects_[constants::kResonator])->setTuning(tuning);
   }
 
   void ReorderableEffectChain::connectMorph(const Processor* fft_size) {

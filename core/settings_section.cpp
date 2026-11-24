@@ -12,6 +12,8 @@
 #include "synth_slider.h"
 #include "text_look_and_feel.h"
 #include "text_selector.h"
+#include "synth_strings.h"
+#include "tuning.h"
 #include "open_gl_image_component.h"
 
 namespace {
@@ -423,6 +425,177 @@ class SettingsSection::FftBox : public SynthSection, private Timer {
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FftBox)
 };
 
+// ---- Resonator: MIDI / MPE, tuning and expression. All controls are ordinary Vital parameters (saved with the
+// preset and automatable by the host), except the scale file and the "follow MIDI" switch, which are plugin settings.
+class SettingsSection::ResonatorBox : public SynthSection {
+  public:
+    enum Kind { kMidi, kTuning, kExpression };
+
+    explicit ResonatorBox(Kind kind) :
+        SynthSection(kind == kMidi ? "MIDI" : (kind == kTuning ? "TUNING" : "EXPRESSION")), kind_(kind) {
+      setSidewaysHeading(false);
+      if (kind == kMidi) {
+        midi_follow_ = makeButton("Follow MIDI notes");
+        mpe_ = makeSelector("resonator_mpe", strings::kResonatorMpeNames);
+        bend_ = makeBar("resonator_bend_range");
+        rows_.push_back({ midi_follow_.get(), "" });
+        rows_.push_back({ mpe_.get(), "MPE" });
+        rows_.push_back({ bend_.get(), "Bend" });
+      }
+      else if (kind == kTuning) {
+        tuning_ = makeSelector("resonator_tuning", strings::kResonatorTuningNames);
+        load_ = makeButton("Load scale...");
+        ref_ = makeBar("resonator_ref_pitch");
+        glide_ = makeBar("resonator_glide");
+        rows_.push_back({ tuning_.get(), "Tuning" });
+        rows_.push_back({ load_.get(), "" });
+        rows_.push_back({ ref_.get(), "A4 ref" });
+        rows_.push_back({ glide_.get(), "Glide" });
+      }
+      else {
+        slide_to_ = makeSelector("resonator_slide_target", strings::kResonatorSlideTargetNames);
+        pressure_to_ = makeSelector("resonator_pressure_target", strings::kResonatorPressureTargetNames);
+        rows_.push_back({ slide_to_.get(), "Slide" });
+        rows_.push_back({ pressure_to_.get(), "Pressure" });
+      }
+    }
+
+    void parentHierarchyChanged() override {
+      SynthSection::parentHierarchyChanged();
+      if (EffectPlugin* plugin = getPlugin()) {
+        if (midi_follow_)
+          midi_follow_->setToggleState(plugin->getSettings().keytrack_from_midi, dontSendNotification);
+        if (load_ && !plugin->getSettings().tuning_file.empty())
+          load_->setButtonText(File(String(plugin->getSettings().tuning_file)).getFileNameWithoutExtension());
+      }
+    }
+
+    void paintBackgroundShadow(Graphics& g) override { paintTabShadow(g); }
+
+    void paintBackground(Graphics& g) override {
+      SynthSection::paintBackground(g);
+      setLabelFont(g);
+      const float rounding = findValue(Skin::kLabelBackgroundRounding);
+      for (const Row& row : rows_) {
+        // The component's own look draws selectors, buttons and (through OpenGL) the bars' fill; the box only adds the
+        // dark well behind it and the row's name to its left.
+        g.setColour(findColour(Skin::kTextComponentBackground, true));
+        g.fillRoundedRectangle(row.well.toFloat(), rounding);
+        if (row.label.isNotEmpty()) {
+          g.setColour(findColour(Skin::kBodyText, true));
+          g.drawText(row.label, row.label_bounds, Justification::centredLeft);
+        }
+      }
+    }
+
+    void resized() override {
+      SynthSection::resized();
+      const int margin = getWidgetMargin();
+      const int y = getTitleWidth() + margin;
+      const int count = std::max(1, static_cast<int>(rows_.size()));
+      const int each = (getHeight() - y) / (kind_ == kExpression ? 3 : count);
+      const int label_width = static_cast<int>((getWidth() - 2 * margin) * 0.44f);
+      for (size_t i = 0; i < rows_.size(); ++i) {
+        Row& row = rows_[i];
+        const int top = y + static_cast<int>(i) * each, height = each - margin, width = getWidth() - 2 * margin;
+        Rectangle<int> well;
+        if (row.label.isNotEmpty()) {
+          row.label_bounds = Rectangle<int>(margin + 2, top, label_width - 2, height);
+          well = Rectangle<int>(margin + label_width, top, width - label_width, height);
+        }
+        else {
+          row.label_bounds = Rectangle<int>();
+          well = Rectangle<int>(margin, top, width, height);
+        }
+        row.well = well;
+        // Text selectors draw their value a little above centre (they expect a name pill below it); shift the
+        // component down by that offset so the value sits in the middle of the well.
+        int shift = 0;
+        if (auto* selector = dynamic_cast<TextSelector*>(row.component))
+          shift = static_cast<int>(-selector->findValue(Skin::kTextComponentOffset));
+        row.component->setBounds(well.translated(0, shift));
+      }
+    }
+
+    void sliderValueChanged(Slider* changed) override {
+      SynthSection::sliderValueChanged(changed);
+      repaintBackground();
+    }
+
+    void buttonClicked(Button* clicked) override {
+      EffectPlugin* plugin = getPlugin();
+      if (clicked == midi_follow_.get()) {
+        if (plugin)
+          plugin->setKeytrackFromMidi(midi_follow_->getToggleState());
+      }
+      else if (clicked == load_.get()) {
+        chooser_ = std::make_unique<FileChooser>("Load a scale or keyboard mapping", File(), Tuning::allFileExtensions());
+        chooser_->launchAsync(FileBrowserComponent::openMode | FileBrowserComponent::canSelectFiles,
+                              [this](const FileChooser& chooser) {
+          File file = chooser.getResult();
+          EffectPlugin* p = getPlugin();
+          if (file.existsAsFile() && p) {
+            p->setTuningFile(file);
+            load_->setButtonText(file.getFileNameWithoutExtension());
+            if (tuning_)
+              tuning_->setValue(1.0);
+          }
+        });
+      }
+    }
+
+  private:
+    struct Row {
+      Component* component;
+      String label;
+      Rectangle<int> label_bounds;
+      Rectangle<int> well;
+    };
+
+    EffectPlugin* getPlugin() {
+      if (SynthGuiInterface* parent = findParentComponentOfClass<SynthGuiInterface>())
+        return dynamic_cast<EffectPlugin*>(parent->getSynth());
+      return nullptr;
+    }
+
+    std::unique_ptr<OpenGlToggleButton> makeButton(const char* text) {
+      auto button = std::make_unique<OpenGlToggleButton>("");
+      button->addListener(this);
+      button->setLookAndFeel(TextLookAndFeel::instance());
+      button->setButtonText(text);
+      addAndMakeVisible(button.get());
+      addOpenGlComponent(button->getGlComponent());
+      return button;
+    }
+
+    std::unique_ptr<TextSelector> makeSelector(const char* param, const std::string* names) {
+      auto selector = std::make_unique<TextSelector>(param);
+      addSlider(selector.get());
+      selector->setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
+      selector->setLookAndFeel(TextLookAndFeel::instance());
+      selector->setLongStringLookup(names);
+      selector->setTextHeightPercentage(0.45f);
+      return selector;
+    }
+
+    std::unique_ptr<SynthSlider> makeBar(const char* param) {
+      auto slider = std::make_unique<SynthSlider>(param);
+      addSlider(slider.get());
+      slider->setSliderStyle(Slider::LinearBar);
+      slider->setPopupPlacement(BubbleComponent::above);
+      return slider;
+    }
+
+    Kind kind_;
+    std::vector<Row> rows_;
+    std::unique_ptr<OpenGlToggleButton> midi_follow_, load_;
+    std::unique_ptr<TextSelector> mpe_, tuning_, slide_to_, pressure_to_;
+    std::unique_ptr<SynthSlider> bend_, ref_, glide_;
+    std::unique_ptr<FileChooser> chooser_;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ResonatorBox)
+};
+
 // ---- The page ------------------------------------------------------------------------------------------
 SettingsSection::SettingsSection() : SynthSection("settings") {
   setSkinOverride(Skin::kAdvanced);
@@ -432,9 +605,19 @@ SettingsSection::SettingsSection() : SynthSection("settings") {
   display_ = std::make_unique<DisplayBox>();
   addSubSection(display_.get());
 
-  if (vitalfx::thisEffect().uses_keytrack) {
+  const bool resonator = vitalfx::thisEffect().kind == vitalfx::EffectKind::kResonator;
+  if (vitalfx::thisEffect().uses_keytrack && !resonator) {
     keytrack_ = std::make_unique<KeytrackBox>();
     addSubSection(keytrack_.get());
+  }
+
+  if (resonator) {
+    midi_box_ = std::make_unique<ResonatorBox>(ResonatorBox::kMidi);
+    addSubSection(midi_box_.get());
+    tuning_box_ = std::make_unique<ResonatorBox>(ResonatorBox::kTuning);
+    addSubSection(tuning_box_.get());
+    expression_box_ = std::make_unique<ResonatorBox>(ResonatorBox::kExpression);
+    addSubSection(expression_box_.get());
   }
 
   if (vitalfx::thisEffect().kind == vitalfx::EffectKind::kMorph) {
@@ -454,20 +637,20 @@ void SettingsSection::paintBackground(Graphics& g) {
 
 void SettingsSection::resized() {
   const int padding = getPadding();
-  const int boxes = (keytrack_ || fft_) ? 3 : 2;
+  std::vector<SynthSection*> boxes_list = { oversample_.get(), display_.get() };
+  for (SynthSection* extra : { static_cast<SynthSection*>(keytrack_.get()), static_cast<SynthSection*>(fft_.get()),
+                               static_cast<SynthSection*>(midi_box_.get()), static_cast<SynthSection*>(tuning_box_.get()),
+                               static_cast<SynthSection*>(expression_box_.get()) })
+    if (extra)
+      boxes_list.push_back(extra);
+  const int boxes = static_cast<int>(boxes_list.size());
   const int box_width = (getWidth() - (boxes - 1) * padding) / boxes;
 
   int x = 0;
-  oversample_->setBounds(x, 0, box_width, getHeight());
-  x += box_width + padding;
-  display_->setBounds(x, 0, box_width, getHeight());
-  if (keytrack_) {
+  for (int i = 0; i < boxes; ++i) {
+    const bool last = i == boxes - 1;
+    boxes_list[i]->setBounds(x, 0, last ? getWidth() - x : box_width, getHeight());
     x += box_width + padding;
-    keytrack_->setBounds(x, 0, getWidth() - x, getHeight());
-  }
-  if (fft_) {
-    x += box_width + padding;
-    fft_->setBounds(x, 0, getWidth() - x, getHeight());
   }
 
   SynthSection::resized();

@@ -20,9 +20,12 @@
 
 #include "synth_constants.h"
 
+class Tuning;
+
 namespace vital {
 
   class StereoMemory;
+  class ResonatorMidi;
 
   class ReorderableEffectChain : public SynthModule {
     public:
@@ -32,7 +35,7 @@ namespace vital {
         kNumInputs
       };
 
-      ReorderableEffectChain(const Output* beats_per_second, const Output* keytrack);
+      ReorderableEffectChain(const Output* beats_per_second, const Output* keytrack, ResonatorMidi* resonator_midi = nullptr);
 
       virtual void process(int num_samples) override;
       virtual void hardReset() override;
@@ -46,6 +49,8 @@ namespace vital {
 
       // The Morph effect needs the FFT size (an index, from the engine).
       void connectMorph(const Processor* fft_size);
+      // The Resonator effect follows this tuning (scale files) for its MIDI notes.
+      void setResonatorTuning(const Tuning* tuning);
       // Whether the Morph effect is on (a bypassed one costs no latency). Safe from any thread.
       bool morphOn() const;
       // The delay Morph adds while on, in host samples.
@@ -57,6 +62,7 @@ namespace vital {
       const StereoMemory* equalizer_memory_;
       const Output* beats_per_second_;
       const Output* keytrack_;
+      ResonatorMidi* resonator_midi_;
       SynthModule* effects_[constants::kNumEffects];
       Value* effects_on_[constants::kNumEffects];
       int effect_order_[constants::kNumEffects];

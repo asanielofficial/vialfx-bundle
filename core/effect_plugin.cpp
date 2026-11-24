@@ -122,6 +122,13 @@ void EffectPlugin::prepareToPlay(double sample_rate, int) {
 
 void EffectPlugin::releaseResources() { }
 
+// Transport stop / host reset: the Resonator forgets held notes, bends and its ringing; the other effects keep
+// their tails as before.
+void EffectPlugin::reset() {
+  if (static_cast<EffectKind>(VITALFX_EFFECT) == EffectKind::kResonator && engine_)
+    engine_->allSoundsOff();
+}
+
 // Morph's spectral stage delays the audio by one FFT size while a spectral mode is chosen; the host needs to know
 // so its delay compensation keeps the plugin in time. Re-checked every block (the FFT size and the mode can change).
 void EffectPlugin::updateLatency() {
@@ -157,6 +164,12 @@ void EffectPlugin::processBlock(AudioBuffer<float>& buffer, MidiBuffer& midi_mes
           it->second->set(0.0f);
       }
     }
+  }
+
+  if (static_cast<EffectKind>(VITALFX_EFFECT) == EffectKind::kResonator) {
+    auto mpe = controls_.find("resonator_mpe");
+    if (mpe != controls_.end())
+      midi_manager_->setMpeEnabled(mpe->second->value() > 0.5f);
   }
 
   if (AudioPlayHead* play_head = getPlayHead()) {
@@ -215,11 +228,17 @@ void EffectPlugin::setKeytrackFromMidi(bool enabled) {
   settings_.keytrack_from_midi = enabled;
 }
 
+void EffectPlugin::setTuningFile(const File& file) {
+  settings_.tuning_file = file.getFullPathName().toStdString();
+  loadTuningFile(file);
+}
+
 void EffectPlugin::getStateInformation(MemoryBlock& dest_data) {
   json data = LoadSave::stateToJson(this, getCallbackLock());
 
   data["vitalfx"]["effect"] = vitalfx::thisEffect().display_name;
   data["vitalfx"]["keytrack_from_midi"] = settings_.keytrack_from_midi;
+  data["vitalfx"]["tuning_file"] = settings_.tuning_file;
 
   MemoryOutputStream stream;
   stream.writeString(String(data.dump()));
@@ -237,6 +256,12 @@ void EffectPlugin::setStateInformation(const void* data, int size_in_bytes) {
       const json& fx = json_data["vitalfx"];
       if (fx.count("keytrack_from_midi"))
         settings_.keytrack_from_midi = fx["keytrack_from_midi"].get<bool>();
+      if (fx.count("tuning_file") && fx["tuning_file"].is_string()) {
+        settings_.tuning_file = fx["tuning_file"].get<std::string>();
+        File tuning(String(settings_.tuning_file));
+        if (!settings_.tuning_file.empty() && tuning.existsAsFile())
+          loadTuningFile(tuning);
+      }
     }
     LoadSave::jsonToState(this, save_info_, json_data);
     checkOversampling();

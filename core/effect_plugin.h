@@ -28,6 +28,7 @@ class EffectPlugin : public SynthBase, public AudioProcessor, public ValueBridge
     const String getName() const override;
     void prepareToPlay(double sample_rate, int buffer_size) override;
     void releaseResources() override;
+    void reset() override;
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
     void processBlock(AudioBuffer<float>&, MidiBuffer&) override;
     using AudioProcessor::processBlock;
@@ -55,6 +56,7 @@ class EffectPlugin : public SynthBase, public AudioProcessor, public ValueBridge
     // Plugin-level settings (settings popup in the editor).
     vitalfx::EffectSettings& getSettings() { return settings_; }
     void setKeytrackFromMidi(bool enabled);
+    void setTuningFile(const File& file);
 
     bool isEffectParameter(const std::string& name) const;
     // Reports the spectral stage latency of Morph to the host.

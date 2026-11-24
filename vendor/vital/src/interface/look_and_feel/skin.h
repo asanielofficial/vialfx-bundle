@@ -60,6 +60,7 @@ class Skin {
       kVibrato,
       kTremolo,
       kMorph,
+      kResonator,
       kModulationDragDrop,
       kModulationMatrix,
       kPresetBrowser,

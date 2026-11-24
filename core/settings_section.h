@@ -14,6 +14,8 @@ class TextSelector;
 //   DISPLAY        Frequency units (Semitones / Hz) and Skin, exactly as in Vital
 //   KEYTRACK       filter plugin only: follow incoming MIDI notes
 //   FFT SIZE       Morph only: 256 .. 32768, with the latency it adds
+//   MIDI / TUNING / EXPRESSION   Resonator only: MIDI follow, MPE and bend range; tuning, A4 reference, glide;
+//                  where slide and pressure act
 class SettingsSection : public SynthSection {
   public:
     SettingsSection();
@@ -31,11 +33,13 @@ class SettingsSection : public SynthSection {
     class DisplayBox;
     class KeytrackBox;
     class FftBox;
+    class ResonatorBox;
 
     std::unique_ptr<OversampleBox> oversample_;
     std::unique_ptr<DisplayBox> display_;
     std::unique_ptr<KeytrackBox> keytrack_;
     std::unique_ptr<FftBox> fft_;
+    std::unique_ptr<ResonatorBox> midi_box_, tuning_box_, expression_box_;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SettingsSection)
 };

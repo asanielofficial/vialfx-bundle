@@ -20,6 +20,7 @@
 #include "synth_module.h"
 #include "note_handler.h"
 #include "tuning.h"
+#include "resonator_midi.h"
 
 #include <memory>
 
@@ -118,6 +119,7 @@ namespace vital {
       EffectsModulationHandler* modulation_handler_;
       Upsampler* upsampler_;
       ReorderableEffectChain* effect_chain_;
+      ResonatorMidi resonator_midi_;
 
       int last_oversampling_amount_;
       int last_sample_rate_;

@@ -190,7 +190,8 @@ namespace strings {
     "freq_shifter",
     "vibrato",
     "tremolo",
-    "morph"
+    "morph",
+    "resonator"
   };
 
   const std::string kSyncedFrequencyNames[] = {
@@ -308,6 +309,7 @@ namespace strings {
     "VIBRATO",
     "TREMOLO",
     "MORPH",
+    "RESONATOR",
   };
 
   const std::string kDestinationMenuNames[vital::constants::kNumSourceDestinations + vital::constants::kNumEffects] = {
@@ -331,6 +333,7 @@ namespace strings {
     "Vibrato",
     "Tremolo",
     "Morph",
+    "Resonator",
   };
 
   // Distortion warp modes of the effect build's input lanes (None first; the sidechain lane offers the first seven).
@@ -388,6 +391,14 @@ namespace strings {
   const std::string kFreqShifterQualityNames[] = {
     "Rough", "Normal", "Better", "Excellent"
   };
+
+  const std::string kResonatorStyleNames[] = { "Comb", "Modal", "String", "Formant" };
+  const std::string kResonatorKeytrackNames[] = { "Off", "MIDI" };
+  const std::string kResonatorVoiceNames[] = { "1", "4", "8", "16" };
+  const std::string kResonatorSlideTargetNames[] = { "Damping", "Color", "Resonance" };
+  const std::string kResonatorPressureTargetNames[] = { "Resonance", "Mix", "Color" };
+  const std::string kResonatorTuningNames[] = { "12-TET", "Scale file" };
+  const std::string kResonatorMpeNames[] = { "Off", "On" };
 
   const std::string kPitchShifterModeNames[] = {
     "GRANULAR",

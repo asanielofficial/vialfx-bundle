@@ -1815,7 +1815,7 @@ File LoadSave::getDataDirectory() {
 #ifdef VITALFX_EFFECT
   // VialFX: presets live in <Documents>/VialFX/Bundle/<Effect>/ (User/Presets/... inside it).
   static const char* const kVialFxFolders[] = { "Chorus", "Compressor", "Delay", "Distortion", "EQ",
-                                                "Filter", "Flanger", "Phaser", "Reverb", "Pitch Shifter", "Utility", "Freq Shifter", "Vibrato", "Tremolo", "Morph" };
+                                                "Filter", "Flanger", "Phaser", "Reverb", "Pitch Shifter", "Utility", "Freq Shifter", "Vibrato", "Tremolo", "Morph", "Resonator" };
   File vialfx_directory = File::getSpecialLocation(File::userDocumentsDirectory)
                               .getChildFile("VialFX").getChildFile("Bundle")
                               .getChildFile(kVialFxFolders[VITALFX_EFFECT]);

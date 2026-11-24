@@ -31,6 +31,7 @@ int main(int argc, char** argv) {
   const bool vibrato_test = argc > 2 && String(argv[2]) == "--vibrato";   // vibrato: depth, rate, sum of A+B, bounded
   const bool tremolo_test = argc > 2 && String(argv[2]) == "--tremolo";   // tremolo: depth, rate, A+B sum, bounded
   const bool morph_test = argc > 2 && String(argv[2]) == "--morph";   // morph: every spectral/warp mode finite + audible, latency
+  const bool resonator_test = argc > 2 && String(argv[2]) == "--resonator";   // resonator: pitch, MIDI note, MPE bend, polyphony
   const bool modes_test = argc > 2 && String(argv[2]) == "--modes";   // new filter models / distortion types: finite + audible
   const bool editor_only = argc > 2 && String(argv[2]) == "--editor-only";   // keep window up ~15 s for screenshots
 
@@ -504,6 +505,110 @@ int main(int argc, char** argv) {
     auto v4 = play(1000, 140);
     double peak4 = 0; for (float x : v4) peak4 = std::max(peak4, (double) std::fabs(x));
     CHECK(std::isfinite(peak4) && peak4 > 0.1 && peak4 < 0.6, "tempo sync produces a stable output");
+
+    std::printf(failures ? "\n%d FAILURE(S)\n" : "\nALL CHECKS PASSED\n", failures);
+    return failures ? 1 : 0;
+  }
+
+  if (resonator_test) {
+    auto find = [&](const char* name) -> AudioProcessorParameter* {
+      for (auto* p : params) if (p->getName(64).equalsIgnoreCase(name)) return p;
+      return nullptr;
+    };
+    auto *style = find("Resonator Style"), *keytrack = find("Resonator Key Track"), *voices = find("Resonator Voices"),
+         *tune = find("Resonator Tune"), *resonance = find("Resonator Resonance"), *mixp = find("Resonator Mix"),
+         *bend_range = find("Resonator Bend Range"), *mpe = find("Resonator MPE");
+    CHECK(style && keytrack && voices && tune && resonance && mixp && bend_range && mpe, "resonator parameters found");
+    if (!(style && keytrack && voices && tune && resonance && mixp && bend_range && mpe)) return 1;
+    const int block = 512;
+    plugin->setPlayConfigDetails(2, 2, 48000.0, block);
+    plugin->prepareToPlay(48000.0, block);
+    auto norm = [](double v, double lo, double hi) { return (float) ((v - lo) / (hi - lo)); };
+    auto reset = [&]() {
+      style->setValue(0.0f);                       // Comb: peaks at exact multiples of the pitch
+      keytrack->setValue(0.0f); voices->setValue(norm(2, 0, 3)); tune->setValue(0.5f);
+      resonance->setValue(0.9f); mixp->setValue(1.0f); bend_range->setValue(norm(48, 0, 96)); mpe->setValue(0.0f);
+    };
+    // Plays noise (with optional MIDI events at the start) and returns the last second, mono.
+    auto play = [&](const std::vector<MidiMessage>& events) {
+      plugin->reset();
+      std::vector<float> out; AudioBuffer<float> buf(2, block); Random rnd(7);
+      for (int b = 0; b < 140; ++b) {
+        MidiBuffer midi;
+        if (b == 1) for (auto& m : events) midi.addEvent(m, 0);
+        for (int i = 0; i < block; ++i) { float v = 0.3f * (rnd.nextFloat() * 2.0f - 1.0f); buf.setSample(0, i, v); buf.setSample(1, i, v); }
+        plugin->processBlock(buf, midi);
+        for (int i = 0; i < block; ++i) {
+          float v = buf.getSample(0, i);
+          if (!std::isfinite(v) || std::abs(v) > 16.0f) { out.assign(48000, 1e9f); return out; }
+          if (b >= 140 - 94) out.push_back(v);
+        }
+      }
+      return out;
+    };
+    // Band energy around f (+-3 Hz) so that a slightly detuned peak still counts.
+    auto band = [](const std::vector<float>& v, double f) {
+      double best = 0; const int n = (int) v.size();
+      for (double q = f - 3.0; q <= f + 3.0; q += 1.0) {
+        std::complex<double> a = 0;
+        for (int i = 0; i < n; ++i) {
+          double h = 0.5 - 0.5 * std::cos(2 * MathConstants<double>::pi * i / n);
+          a += h * v[i] * std::polar(1.0, -2 * MathConstants<double>::pi * q * i / 48000.0);
+        }
+        best = std::max(best, std::abs(a));
+      }
+      return best;
+    };
+    auto peaky = [&](const std::vector<float>& v, double on, double off, const char* what) {
+      double r = band(v, on) / std::max(1e-9, band(v, off));
+      std::printf("      %s: %.1f Hz vs %.1f Hz -> ratio %.2f\n", what, on, off, r);
+      return r;
+    };
+    const double c3 = 130.8128;
+
+    reset();
+    auto v0 = play({});
+    CHECK(peaky(v0, c3, c3 * 1.5, "Key track off, Tune 0 (C3)") > 3.0, "comb resonates at the C3 pitch with Key track off");
+    CHECK(peaky(v0, c3 * 2, c3 * 2.5, "  second harmonic") > 2.5, "comb has the second harmonic too");
+
+    reset(); tune->setValue(norm(12, -24, 24));
+    auto v1 = play({});
+    CHECK(peaky(v1, c3 * 2, c3 * 3, "Tune +12 st") > 3.0, "Tune +12 semitones moves the resonance up an octave");
+    CHECK(band(v1, c3) < 0.5 * band(v1, c3 * 2), "the old fundamental is gone after the tune change");
+
+    reset(); keytrack->setValue(1.0f);
+    auto v2 = play({ MidiMessage::noteOn(1, 57, (uint8) 100) });
+    CHECK(peaky(v2, 220.0, 330.0, "MIDI note A3 (57)") > 3.0, "a MIDI note sets the resonator pitch");
+    CHECK(band(v2, 220.0) > 2.0 * band(v2, c3), "the MIDI pitch replaces the Key track off pitch");
+
+    // Microtonal: MPE note on channel 2 with +2 semitones of bend (bend range 2) -> 246.94 Hz.
+    reset(); keytrack->setValue(1.0f); mpe->setValue(1.0f); bend_range->setValue(norm(2, 0, 96));
+    auto v3 = play({ MidiMessage::pitchWheel(2, 16383), MidiMessage::noteOn(2, 57, (uint8) 100) });
+    CHECK(peaky(v3, 246.94, 370.4, "MPE note A3 + 2 st bend") > 3.0, "per-note pitch bend retunes the resonator");
+
+    // A quarter tone: bend range 2 st, wheel halfway between centre and top -> +1 st... use 25% -> +0.5 st = 226.4 Hz.
+    reset(); keytrack->setValue(1.0f); mpe->setValue(1.0f); bend_range->setValue(norm(2, 0, 96));
+    auto v4 = play({ MidiMessage::pitchWheel(2, 8192 + 2048), MidiMessage::noteOn(2, 57, (uint8) 100) });
+    const double qt = 220.0 * std::pow(2.0, 0.5 / 12.0);
+    const double semi_up = 220.0 * std::pow(2.0, 1.0 / 12.0);
+    std::printf("      quarter tone %.1f Hz: %.0f, A3 %.0f, A#3 %.0f\n", qt, band(v4, qt), band(v4, 220.0), band(v4, semi_up));
+    CHECK(peaky(v4, qt, qt * 1.5, "MPE quarter-tone bend") > 3.0 && band(v4, qt) > 1.4 * band(v4, 220.0) && band(v4, qt) > 1.4 * band(v4, semi_up), "a quarter-tone bend lands between the semitones");
+
+    // Two notes on two MPE channels sound at once (voices = 8).
+    reset(); keytrack->setValue(1.0f); mpe->setValue(1.0f); voices->setValue(norm(2, 0, 3));
+    auto v5 = play({ MidiMessage::pitchWheel(2, 8192), MidiMessage::pitchWheel(3, 8192), MidiMessage::noteOn(2, 48, (uint8) 100), MidiMessage::noteOn(3, 55, (uint8) 100) });
+    const double g3 = 195.9977;
+    CHECK(peaky(v5, c3, 163.5, "two notes: C3") > 3.0, "first MPE note resonates");
+    CHECK(peaky(v5, g3, 163.5, "two notes: G3") > 3.0, "second MPE note resonates at once");
+
+    // Every style stays finite and audible.
+    for (int st = 0; st < 4; ++st) {
+      reset(); style->setValue(st / 3.0f);
+      auto v = play({});
+      double e = 0; bool fin = true; for (float x : v) { e += x * x; if (!std::isfinite(x) || std::abs(x) > 8.0f) fin = false; }
+      std::printf("      style %d: energy %.2f\n", st, e);
+      CHECK(fin && e > 1e-3, "each style is finite and audible");
+    }
 
     std::printf(failures ? "\n%d FAILURE(S)\n" : "\nALL CHECKS PASSED\n", failures);
     return failures ? 1 : 0;

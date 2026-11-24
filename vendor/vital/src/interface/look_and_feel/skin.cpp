@@ -57,6 +57,7 @@ namespace {
     "Vibrato",
     "Tremolo",
     "Morph",
+    "Resonator",
     "Modulation Drag Drop",
     "Modulation Matrix",
     "Preset Browser",
@@ -712,6 +713,7 @@ namespace {
       { "Vibrato", Skin::kVibrato },
       { "Tremolo", Skin::kTremolo },
       { "Morph", Skin::kMorph },
+      { "Resonator", Skin::kResonator },
     };
     return modules;
   }

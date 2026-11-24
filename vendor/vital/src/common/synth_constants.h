@@ -117,6 +117,7 @@ namespace vital {
       kVibrato,
       kTremolo,
       kMorph,
+      kResonator,
       kNumEffects
     };
 

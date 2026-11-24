@@ -43,7 +43,13 @@ set(VITALFX_ONLY "" CACHE STRING "Limit the build to these plugin targets (defau
 
 # vitalfx_add_plugin(NAME <target> EFFECT <EffectKind index> CODE <4 chars> [WIDTH n] [HEIGHT n])
 function(vitalfx_add_plugin)
-  cmake_parse_arguments(P "" "NAME;EFFECT;CODE;WANTS_MIDI;PRODUCT" "" ${ARGN})
+  cmake_parse_arguments(P "" "NAME;EFFECT;CODE;WANTS_MIDI;PRODUCT;MIDI_CC" "" ${ARGN})
+  # MIDI_CC: let VST3 hosts deliver pitch bend, pressure and CC74 (JUCE emulates them with hidden parameters).
+  # Off by default; the MPE-aware Resonator turns it on.
+  set(midi_cc 0)
+  if(P_MIDI_CC)
+    set(midi_cc 1)
+  endif()
   if(NOT P_PRODUCT)
     set(P_PRODUCT "${P_NAME}")
   endif()
@@ -82,7 +88,7 @@ function(vitalfx_add_plugin)
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     JUCE_VST3_CAN_REPLACE_VST2=0
-    JUCE_VST3_EMULATE_MIDI_CC_WITH_PARAMETERS=0
+    JUCE_VST3_EMULATE_MIDI_CC_WITH_PARAMETERS=${midi_cc}
     JUCE_DISPLAY_SPLASH_SCREEN=0
     JUCE_REPORT_APP_USAGE=0
     JUCE_MODAL_LOOPS_PERMITTED=1
@@ -139,3 +145,4 @@ vitalfx_add_plugin(NAME FreqShifter EFFECT 11 CODE VfFq PRODUCT "Freq Shifter")
 vitalfx_add_plugin(NAME Vibrato     EFFECT 12 CODE VfVb)
 vitalfx_add_plugin(NAME Tremolo     EFFECT 13 CODE VfTm)
 vitalfx_add_plugin(NAME Morph       EFFECT 14 CODE VfMp)
+vitalfx_add_plugin(NAME Resonator   EFFECT 15 CODE VfRs WANTS_MIDI TRUE MIDI_CC TRUE)

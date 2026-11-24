@@ -95,7 +95,7 @@ namespace vital {
     addIdleProcessor(upsampler_);
 
     Value* effect_chain_order = createBaseControl("effect_chain_order");
-    effect_chain_ = new ReorderableEffectChain(beats_per_second, modulation_handler_->midi_offset_output());
+    effect_chain_ = new ReorderableEffectChain(beats_per_second, modulation_handler_->midi_offset_output(), &resonator_midi_);
     addSubmodule(effect_chain_);
     addProcessor(effect_chain_);
     effect_chain_->plug(upsampler_, ReorderableEffectChain::kAudio);
@@ -231,6 +231,8 @@ namespace vital {
 
   void SoundEngine::setTuning(const Tuning* tuning) {
     modulation_handler_->setTuning(tuning);
+    if (effect_chain_)
+      effect_chain_->setResonatorTuning(tuning);
   }
 
   void SoundEngine::checkOversampling() {
@@ -276,26 +278,32 @@ namespace vital {
   }
 
   void SoundEngine::allSoundsOff() {
+    resonator_midi_.reset();   // held notes and every channel's bend / slide / pressure
     effect_chain_->hardReset();
   }
 
   void SoundEngine::allNotesOff(int sample) {
+    resonator_midi_.allSoundsOff();
     modulation_handler_->allNotesOff(sample);
   }
 
   void SoundEngine::allNotesOff(int sample, int channel) {
+    resonator_midi_.allNotesOff(channel);
     modulation_handler_->allNotesOff(channel);
   }
 
   void SoundEngine::allNotesOffRange(int sample, int from_channel, int to_channel) {
+    resonator_midi_.allNotesOffRange(from_channel, to_channel);
     modulation_handler_->allNotesOffRange(sample, from_channel, to_channel);
   }
 
   void SoundEngine::noteOn(int note, mono_float velocity, int sample, int channel) {
+    resonator_midi_.noteOn(note, velocity, channel);
     modulation_handler_->noteOn(note, velocity, sample, channel);
   }
 
   void SoundEngine::noteOff(int note, mono_float lift, int sample, int channel) {
+    resonator_midi_.noteOff(note, channel);
     modulation_handler_->noteOff(note, lift, sample, channel);
   }
 
@@ -308,10 +316,12 @@ namespace vital {
   }
   
   void SoundEngine::setPitchWheel(mono_float value, int channel) {
+    resonator_midi_.setPitchWheel(value, channel);
     modulation_handler_->setPitchWheel(value, channel);
   }
 
   void SoundEngine::setZonedPitchWheel(mono_float value, int from_channel, int to_channel) {
+    resonator_midi_.setZonedPitchWheel(value, from_channel, to_channel);
     modulation_handler_->setZonedPitchWheel(value, from_channel, to_channel);
   }
 
@@ -336,18 +346,23 @@ namespace vital {
   }
 
   void SoundEngine::setAftertouch(mono_float note, mono_float value, int sample, int channel) {
+    resonator_midi_.setPolyPressure(static_cast<int>(note), channel, value);
     modulation_handler_->setAftertouch(note, value, sample, channel);
   }
 
   void SoundEngine::setChannelAftertouch(int channel, mono_float value, int sample) {
+    resonator_midi_.setChannelPressure(channel, value);
     modulation_handler_->setChannelAftertouch(channel, value, sample);
   }
 
   void SoundEngine::setChannelRangeAftertouch(int from_channel, int to_channel, mono_float value, int sample) {
+    for (int channel = from_channel; channel <= to_channel; ++channel)
+      resonator_midi_.setChannelPressure(channel, value);
     modulation_handler_->setChannelRangeAftertouch(from_channel, to_channel, value, sample);
   }
 
   void SoundEngine::setChannelSlide(int channel, mono_float value, int sample) {
+    resonator_midi_.setChannelSlide(channel, value);
     modulation_handler_->setChannelSlide(channel, value, sample);
   }
 

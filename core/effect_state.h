@@ -11,6 +11,7 @@ namespace vitalfx {
 // in the host session and are not automatable.
 struct EffectSettings {
   bool keytrack_from_midi = true;  // filter plugin only: follow incoming MIDI notes for keytracking
+  std::string tuning_file;          // resonator plugin only: the .scl / .kbm loaded for "Scale file" tuning
 };
 
 // Folder where this effect's user presets live, e.g. ~/Documents/VialFX/Reverb/Presets

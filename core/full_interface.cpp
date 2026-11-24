@@ -254,6 +254,17 @@ json FullInterface::getWavetableJson(int index) {
     return wavetable_edits_[index]->getWavetableJson();
   return json();
 }
+
+void FullInterface::tableLoadFile(int slot, const File& file) {
+  if (slot >= 0 && slot < vital::kNumWavetableSlots && wavetable_edits_[slot])
+    wavetable_edits_[slot]->loadFile(file);
+}
+
+std::string FullInterface::tableName(int slot) {
+  if (slot >= 0 && slot < vital::kNumWavetableSlots && wavetable_edits_[slot])
+    return wavetable_edits_[slot]->getName();
+  return "";
+}
 #else
 void FullInterface::morphLayoutChanged() { }
 void FullInterface::showWavetableEditSection(int) { }

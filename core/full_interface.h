@@ -13,6 +13,12 @@
 #include "popup_browser.h"
 #include "shaders.h"
 #include "synth_section.h"
+#if VITALFX_HAS_MORPH
+#include "table_settings_editor.h"
+#define VITALFX_TABLE_HOST , public TableFileHost
+#else
+#define VITALFX_TABLE_HOST
+#endif
 #include "wavetable_creator.h"
 #include "synth_constants.h"
 
@@ -25,7 +31,7 @@ class SaveSection;
 class SettingsSection;
 struct SynthGuiData;
 
-class FullInterface : public SynthSection, public EffectHeader::Listener,
+class FullInterface : public SynthSection, public EffectHeader::Listener VITALFX_TABLE_HOST,
                       public OpenGLRenderer, DragAndDropContainer, private Timer {
   public:
     static constexpr double kMinOpenGlVersion = 1.4;
@@ -119,6 +125,12 @@ class FullInterface : public SynthSection, public EffectHeader::Listener,
     void hideWavetableEditSection() { showWavetableEditSection(-1); }
     void saveWavetable(int index);
     json getWavetableJson(int index);
+#if VITALFX_HAS_MORPH
+    // The table menus (Spectral Table / Distort Table cog) change or save the wavetable of a slot through these.
+    void tableLoadFile(int slot, const File& file) override;
+    std::string tableName(int slot) override;
+    void tableSave(int slot) override { saveWavetable(slot); }
+#endif
     // Morph: an editor docked under / undocked from the panel; the window grows or shrinks with it.
     void morphLayoutChanged();
 

@@ -6,14 +6,14 @@
 #ifndef OutputDir
   #define OutputDir "."
 #endif
-#define AppVersion "1.2"
+#define AppVersion "1.3"
 
 [Setup]
 AppId={{6B0E7C52-2F43-4A57-9D5C-1A7F4E5B9C31}
 AppName=VialFX-Bundle
 AppVersion={#AppVersion}
 AppVerName=VialFX-Bundle {#AppVersion}
-VersionInfoVersion=1.2.0.0
+VersionInfoVersion=1.3.0.0
 VersionInfoProductName=VialFX-Bundle
 VersionInfoProductVersion={#AppVersion}
 VersionInfoDescription=VialFX-Bundle {#AppVersion} Setup
@@ -54,6 +54,7 @@ Name: "freqshifter"; Description: "Vial Freq Shifter"; Types: full custom
 Name: "vibrato"; Description: "Vial Vibrato"; Types: full custom
 Name: "tremolo"; Description: "Vial Tremolo"; Types: full custom
 Name: "morph"; Description: "Vial Morph"; Types: full custom
+Name: "resonator"; Description: "Vial Resonator"; Types: full custom
 
 [Tasks]
 Name: "vst3"; Description: "Install VST3 versions (C:\Program Files\Common Files\VST3)"; GroupDescription: "Plugin formats:"
@@ -76,6 +77,7 @@ Source: "{#SourceDir}\VST3\Vial Freq Shifter.vst3\*"; DestDir: "{commoncf64}\VST
 Source: "{#SourceDir}\VST3\Vial Vibrato.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Vibrato.vst3"; Components: vibrato; Tasks: vst3; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourceDir}\VST3\Vial Tremolo.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Tremolo.vst3"; Components: tremolo; Tasks: vst3; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourceDir}\VST3\Vial Morph.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Morph.vst3"; Components: morph; Tasks: vst3; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\VST3\Vial Resonator.vst3\*"; DestDir: "{commoncf64}\VST3\Vial Resonator.vst3"; Components: resonator; Tasks: vst3; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourceDir}\CLAP\Vial Chorus.clap"; DestDir: "{commoncf64}\CLAP"; Components: chorus; Tasks: clap; Flags: ignoreversion
 Source: "{#SourceDir}\CLAP\Vial Compressor.clap"; DestDir: "{commoncf64}\CLAP"; Components: compressor; Tasks: clap; Flags: ignoreversion
 Source: "{#SourceDir}\CLAP\Vial Delay.clap"; DestDir: "{commoncf64}\CLAP"; Components: delay; Tasks: clap; Flags: ignoreversion
@@ -91,6 +93,7 @@ Source: "{#SourceDir}\CLAP\Vial Freq Shifter.clap"; DestDir: "{commoncf64}\CLAP"
 Source: "{#SourceDir}\CLAP\Vial Vibrato.clap"; DestDir: "{commoncf64}\CLAP"; Components: vibrato; Tasks: clap; Flags: ignoreversion
 Source: "{#SourceDir}\CLAP\Vial Tremolo.clap"; DestDir: "{commoncf64}\CLAP"; Components: tremolo; Tasks: clap; Flags: ignoreversion
 Source: "{#SourceDir}\CLAP\Vial Morph.clap"; DestDir: "{commoncf64}\CLAP"; Components: morph; Tasks: clap; Flags: ignoreversion
+Source: "{#SourceDir}\CLAP\Vial Resonator.clap"; DestDir: "{commoncf64}\CLAP"; Components: resonator; Tasks: clap; Flags: ignoreversion
 
 [Messages]
 FinishedLabel=VialFX-Bundle is installed. Rescan plugins in your DAW to see the Vial effects.

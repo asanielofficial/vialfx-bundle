@@ -1,13 +1,13 @@
 # VialFX-Bundle
 
-VialFX-Bundle is a set of fifteen audio effect plugins, each one a module from the effects tab of the open-source
+VialFX-Bundle is a set of sixteen audio effect plugins, each one a module from the effects tab of the open-source
 synthesizer [Vital](https://github.com/mtytel/vital) (and a few new ones in the same style), as its own plugin in
 its own window: **Vial Chorus, Compressor, Delay, Distortion, EQ, Filter, Flanger, Phaser, Reverb, Pitch Shifter,
-Utility, Freq Shifter, Vibrato, Tremolo and Morph.** It is built from GPLv3 source code (see
+Utility, Freq Shifter, Vibrato, Tremolo, Morph and Resonator.** It is built from GPLv3 source code (see
 [License](#license) for the origin of the code) and shares its look, skins and presets with the main
 [VialFX](https://github.com/asanielofficial/vialfx) plugin.
 
-> **Status:** version 1.2. VST3 and CLAP builds for Windows, Linux and macOS, plus a
+> **Status:** version 1.3. VST3 and CLAP builds for Windows, Linux and macOS, plus a
 > Windows installer (.exe) and a macOS installer (.pkg), are produced by CI. Windows and Linux are tested by hand;
 > the macOS builds (universal Intel + Apple Silicon, ad-hoc signed) are built by CI and have had limited testing on
 > hardware.
@@ -17,14 +17,14 @@ Utility, Freq Shifter, Vibrato, Tremolo and Morph.** It is built from GPLv3 sour
 
 ## Download
 
-The current stable version is [**VialFX-Bundle 1.2**](https://github.com/asanielofficial/vialfx-bundle/releases/latest):
+The current stable version is [**VialFX-Bundle 1.3**](https://github.com/asanielofficial/vialfx-bundle/releases/latest):
 
 | File | What it is |
 |---|---|
-| `VialFX-Bundle-1.2-Setup-windows.exe` | Windows installer: pick the plugins and the formats (VST3, CLAP) you want |
-| `VialFX-Bundle-1.2-Setup-macos.pkg` | macOS installer: pick the plugins and formats |
-| `VialFX-Bundle-1.2-linux.tar.gz` | Linux VST3 + CLAP (copy into `~/.vst3` and `~/.clap`) |
-| `VialFX-Bundle-1.2-windows.zip`, `VialFX-Bundle-1.2-macos.zip` | Manual-install archives |
+| `VialFX-Bundle-1.3-Setup-windows.exe` | Windows installer: pick the plugins and the formats (VST3, CLAP) you want |
+| `VialFX-Bundle-1.3-Setup-macos.pkg` | macOS installer: pick the plugins and formats |
+| `VialFX-Bundle-1.3-linux.tar.gz` | Linux VST3 + CLAP (copy into `~/.vst3` and `~/.clap`) |
+| `VialFX-Bundle-1.3-windows.zip`, `VialFX-Bundle-1.3-macos.zip` | Manual-install archives |
 
 The newest `main` build is published as the [nightly pre-release](https://github.com/asanielofficial/vialfx-bundle/releases/tag/nightly).
 These builds are unsigned (macOS: ad-hoc signed) and meant for testing; on macOS you may need to allow them in
@@ -32,16 +32,16 @@ System Settings > Privacy & Security the first time.
 
 ## Installing
 
-- **Windows:** run `VialFX-Bundle-1.2-Setup-windows.exe`. Tick the plugins you want (each plugin is its own entry) and
+- **Windows:** run `VialFX-Bundle-1.3-Setup-windows.exe`. Tick the plugins you want (each plugin is its own entry) and
   whether to install VST3, CLAP or both. VST3 goes to `C:\Program Files\Common Files\VST3`, CLAP to
   `C:\Program Files\Common Files\CLAP`. Windows SmartScreen may warn about the unsigned installer: choose *More
   info > Run anyway*.
-- **macOS:** open `VialFX-Bundle-1.2-Setup-macos.pkg`, choose *Customize* to pick plugins and formats. Plugins go to
+- **macOS:** open `VialFX-Bundle-1.3-Setup-macos.pkg`, choose *Customize* to pick plugins and formats. Plugins go to
   `/Library/Audio/Plug-Ins/VST3` and `/Library/Audio/Plug-Ins/CLAP`. The package is unsigned: right-click it and
   choose *Open* the first time.
-- **Linux:** unpack `VialFX-Bundle-1.2-linux.tar.gz` and copy the `.vst3` folders to `~/.vst3` and the `.clap` files to
+- **Linux:** unpack `VialFX-Bundle-1.3-linux.tar.gz` and copy the `.vst3` folders to `~/.vst3` and the `.clap` files to
   `~/.clap`.
-- **Manual (zip):** copy the `.vst3` folders and `.clap` files from `VialFX-Bundle-1.2-windows.zip` or
+- **Manual (zip):** copy the `.vst3` folders and `.clap` files from `VialFX-Bundle-1.3-windows.zip` or
   `-macos.zip` into your system plugin folders, then rescan in your DAW.
 
 Plugins are named **Vial Chorus, Vial Compressor** and so on, so they sort together in your plugin list. To remove
@@ -49,11 +49,12 @@ them, use the Windows uninstaller (*Apps > Installed apps*) or delete the plugin
 
 ## Highlights
 
-- **Fifteen separate plugins** instead of one rack: load only what a track needs, in any order, in any host.
+- **Sixteen separate plugins** instead of one rack: load only what a track needs, in any order, in any host.
 - **Vital's own DSP and look**: each effect is the module from Vital's effects tab, with its animated displays, tempo
   sync and keytracking (Filter follows incoming MIDI notes).
 - **New effects in the same style:** Pitch Shifter (four engines with formant control), Utility, Freq Shifter, Vibrato,
-  Tremolo and Morph (spectral and warp modes with drawn curves and wavetables).
+  Tremolo, Morph (spectral and warp modes with drawn curves and wavetables) and Resonator (a tuned resonator with
+  MIDI and MPE).
 - **Skins:** `.vialskin` files, a full **Skin Editor** with bins, glow, gradients and bevels, and **Sync all** to
   restyle every plugin at once.
 - **Resizable windows** with locked proportions, a preset browser, a built-in volume slider and level meter.
@@ -82,6 +83,22 @@ itself, with an on/off button, its knobs and sliders, and tempo sync wherever Vi
 | **Vial Vibrato** | Two vibrato voices (A and B) with rate, amount, sync and unit selectors |
 | **Vial Tremolo** | Two tremolo voices (A and B) with rate, amount, sync and unit selectors |
 | **Vial Morph** | The spectral morph and distortion warp of the main VialFX plugin as an effect (below) |
+| **Vial Resonator** | A tuned resonator (Comb, Modal, String, Formant) that follows MIDI notes and MPE (below) |
+
+### Vial Resonator
+
+The Resonator rings the incoming audio at a pitch you choose, which turns noise, drums and pads into tuned sounds.
+
+- **Style:** Comb, Modal, String or Formant. **Resonance**, **Damping**, **Stretch** (inharmonicity), **Color** (tone tilt)
+  and **Mix** shape the sound; **Tune** and **Fine** set the pitch.
+- **Key track:** Off uses Tune; MIDI follows the notes sent to the plugin. **Voices** (1, 4, 8 or 16) lets several
+  notes ring at once.
+- **MPE:** with MPE on (settings page), each channel's pitch bend retunes its own note, **Slide** (CC74) and
+  **Pressure** drive the destinations chosen in the settings, and the bend range is set there (48 semitones by default).
+- **Microtonal:** the settings page has a **Tuning** selector (12-TET or a Scala `.scl` scale, with optional `.kbm`),
+  an **A4 reference** and **Glide**.
+- Because pitch bend, slide and pressure need the host to deliver MIDI controllers, the VST3 shows the host a long
+  list of hidden MIDI parameters. Ignore them.
 
 ### Vial Morph
 
@@ -183,6 +200,7 @@ latency is reported). CI runs them on Linux before every full build.
 - The macOS builds are unsigned (ad-hoc signed) and have had limited testing on real hardware.
 - Only the effect's own parameters, bypass and the volume are exposed to the host for automation. Drawn curves,
   wavetables and the dice seed in Vial Morph are saved with the preset but cannot be automated.
+- Vial Resonator supports Scala scale files but not MTS-ESP, and has had little testing on macOS.
 - Vial Morph leaves out Vocode, FM and RM, which need a sidechain lane the effect does not have.
 - Vial Morph reports its FFT size as latency while a spectral mode is active (up to about 0.74 s at 32768); use your
   host's delay compensation.

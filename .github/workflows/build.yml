@@ -6,13 +6,13 @@ name: Build VialFX-Bundle
 on:
   workflow_dispatch:
   push:
-    tags: [ "v*" ]   # a version tag (v1.2) builds everything and publishes the release for it
+    tags: [ "v*" ]   # a version tag (v1.3) builds everything and publishes the release for it
 
 permissions:
   contents: read
 
 env:
-  VERSION: "1.2"
+  VERSION: "1.3"
 
 jobs:
   linux:
@@ -85,6 +85,12 @@ jobs:
           xvfb-run -a -s "-screen 0 1280x800x24 +extension GLX" \
             build/vialfx_host_test_artefacts/Release/vialfx_host_test \
             "build/plugins/Morph_artefacts/Release/VST3/Vial Morph.vst3" --morph
+
+      - name: Resonator checks (pitch, MIDI note, MPE bend, polyphony)
+        run: |
+          xvfb-run -a -s "-screen 0 1280x800x24 +extension GLX" \
+            build/vialfx_host_test_artefacts/Release/vialfx_host_test \
+            "build/plugins/Resonator_artefacts/Release/VST3/Vial Resonator.vst3" --resonator
 
       - name: Collect bundle
         run: |

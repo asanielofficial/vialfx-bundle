@@ -58,7 +58,7 @@ them, use the Windows uninstaller (*Apps > Installed apps*) or delete the plugin
 - **Skins:** `.vialskin` files, a full **Skin Editor** with bins, glow, gradients and bevels, and **Sync all** to
   restyle every plugin at once.
 - **Resizable windows** with locked proportions, a preset browser, a built-in volume slider and level meter.
-- **VST3 and CLAP** on Windows, Linux and macOS (universal), **LV2** on Linux and **Audio Unit (AU)** on macOS, GPL-3.0.
+- **VST3 and CLAP** on Windows, Linux and macOS (universal), **LV2** on all three and **Audio Unit (AU)** on macOS, GPL-3.0.
 
 ## The plugins
 
@@ -165,7 +165,7 @@ resized.
 
 ## Window and host support
 
-- **Formats:** VST3 and CLAP everywhere (build with `-DVITALFX_ENABLE_CLAP=OFF` to skip CLAP), LV2 on Linux (`-DVITALFX_ENABLE_LV2=OFF` to skip; JUCE 6's legacy LV2 wrapper with an X11 editor, URIs `urn:vialfx:<Plugin>`), and AU on macOS. LV2 is checked in CI with a small lilv host (discovery, audio, editor); AU has not been tested on a Mac yet.
+- **Formats:** VST3 and CLAP everywhere (build with `-DVITALFX_ENABLE_CLAP=OFF` to skip CLAP), LV2 on all platforms (`-DVITALFX_ENABLE_LV2=OFF` to skip; JUCE 6's legacy LV2 wrapper, URIs `urn:vialfx:<Plugin>`; install to `~/.lv2`, `C:\Program Files\Common Files\LV2` or `/Library/Audio/Plug-Ins/LV2`), and AU on macOS. LV2 is checked in CI with a small lilv host (discovery and audio on Linux and macOS, editor on Linux); the Windows and macOS LV2 builds and AU have not been tested in a real host yet.
 - **Platforms:** Windows (x64), Linux (x64) and macOS (universal x86_64 + arm64, 10.13+).
 - **Resizing:** every plugin window can be resized with its proportions locked; sizes scale smoothly.
 - **Hosts:** only the effect's own parameters, bypass and the volume are exposed for automation.

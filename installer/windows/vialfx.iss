@@ -1,5 +1,5 @@
 ; VialFX-Bundle Windows installer (Inno Setup 6).
-; Build:  iscc /DSourceDir=<dir containing VST3\ and CLAP\> /DOutputDir=<dir> installer\windows\vialfx.iss
+; Build:  iscc /DSourceDir=<dir containing VST3\, CLAP\ and LV2\> /DOutputDir=<dir> installer\windows\vialfx.iss
 #ifndef SourceDir
   #define SourceDir "..\..\VialFX-Bundle"
 #endif
@@ -59,6 +59,7 @@ Name: "resonator"; Description: "Vial Resonator"; Types: full custom
 [Tasks]
 Name: "vst3"; Description: "Install VST3 versions (C:\Program Files\Common Files\VST3)"; GroupDescription: "Plugin formats:"
 Name: "clap"; Description: "Install CLAP versions (C:\Program Files\Common Files\CLAP)"; GroupDescription: "Plugin formats:"
+Name: "lv2"; Description: "Install LV2 versions (C:\Program Files\Common Files\LV2)"; GroupDescription: "Plugin formats:"
 
 [Files]
 Source: "{#SourceDir}\LICENSE"; DestDir: "{commonappdata}\VialFX"; Flags: ignoreversion
@@ -94,6 +95,22 @@ Source: "{#SourceDir}\CLAP\Vial Vibrato.clap"; DestDir: "{commoncf64}\CLAP"; Com
 Source: "{#SourceDir}\CLAP\Vial Tremolo.clap"; DestDir: "{commoncf64}\CLAP"; Components: tremolo; Tasks: clap; Flags: ignoreversion
 Source: "{#SourceDir}\CLAP\Vial Morph.clap"; DestDir: "{commoncf64}\CLAP"; Components: morph; Tasks: clap; Flags: ignoreversion
 Source: "{#SourceDir}\CLAP\Vial Resonator.clap"; DestDir: "{commoncf64}\CLAP"; Components: resonator; Tasks: clap; Flags: ignoreversion
+Source: "{#SourceDir}\LV2\Vial Chorus.lv2\*"; DestDir: "{commoncf64}\LV2\Vial Chorus.lv2"; Components: chorus; Tasks: lv2; Flags: ignoreversion recursesubdirs
+Source: "{#SourceDir}\LV2\Vial Compressor.lv2\*"; DestDir: "{commoncf64}\LV2\Vial Compressor.lv2"; Components: compressor; Tasks: lv2; Flags: ignoreversion recursesubdirs
+Source: "{#SourceDir}\LV2\Vial Delay.lv2\*"; DestDir: "{commoncf64}\LV2\Vial Delay.lv2"; Components: delay; Tasks: lv2; Flags: ignoreversion recursesubdirs
+Source: "{#SourceDir}\LV2\Vial Distortion.lv2\*"; DestDir: "{commoncf64}\LV2\Vial Distortion.lv2"; Components: distortion; Tasks: lv2; Flags: ignoreversion recursesubdirs
+Source: "{#SourceDir}\LV2\Vial EQ.lv2\*"; DestDir: "{commoncf64}\LV2\Vial EQ.lv2"; Components: eq; Tasks: lv2; Flags: ignoreversion recursesubdirs
+Source: "{#SourceDir}\LV2\Vial Filter.lv2\*"; DestDir: "{commoncf64}\LV2\Vial Filter.lv2"; Components: filter; Tasks: lv2; Flags: ignoreversion recursesubdirs
+Source: "{#SourceDir}\LV2\Vial Flanger.lv2\*"; DestDir: "{commoncf64}\LV2\Vial Flanger.lv2"; Components: flanger; Tasks: lv2; Flags: ignoreversion recursesubdirs
+Source: "{#SourceDir}\LV2\Vial Phaser.lv2\*"; DestDir: "{commoncf64}\LV2\Vial Phaser.lv2"; Components: phaser; Tasks: lv2; Flags: ignoreversion recursesubdirs
+Source: "{#SourceDir}\LV2\Vial Reverb.lv2\*"; DestDir: "{commoncf64}\LV2\Vial Reverb.lv2"; Components: reverb; Tasks: lv2; Flags: ignoreversion recursesubdirs
+Source: "{#SourceDir}\LV2\Vial Pitch Shifter.lv2\*"; DestDir: "{commoncf64}\LV2\Vial Pitch Shifter.lv2"; Components: pitchshifter; Tasks: lv2; Flags: ignoreversion recursesubdirs
+Source: "{#SourceDir}\LV2\Vial Utility.lv2\*"; DestDir: "{commoncf64}\LV2\Vial Utility.lv2"; Components: utility; Tasks: lv2; Flags: ignoreversion recursesubdirs
+Source: "{#SourceDir}\LV2\Vial Freq Shifter.lv2\*"; DestDir: "{commoncf64}\LV2\Vial Freq Shifter.lv2"; Components: freqshifter; Tasks: lv2; Flags: ignoreversion recursesubdirs
+Source: "{#SourceDir}\LV2\Vial Vibrato.lv2\*"; DestDir: "{commoncf64}\LV2\Vial Vibrato.lv2"; Components: vibrato; Tasks: lv2; Flags: ignoreversion recursesubdirs
+Source: "{#SourceDir}\LV2\Vial Tremolo.lv2\*"; DestDir: "{commoncf64}\LV2\Vial Tremolo.lv2"; Components: tremolo; Tasks: lv2; Flags: ignoreversion recursesubdirs
+Source: "{#SourceDir}\LV2\Vial Morph.lv2\*"; DestDir: "{commoncf64}\LV2\Vial Morph.lv2"; Components: morph; Tasks: lv2; Flags: ignoreversion recursesubdirs
+Source: "{#SourceDir}\LV2\Vial Resonator.lv2\*"; DestDir: "{commoncf64}\LV2\Vial Resonator.lv2"; Components: resonator; Tasks: lv2; Flags: ignoreversion recursesubdirs
 
 [Messages]
 FinishedLabel=VialFX-Bundle is installed. Rescan plugins in your DAW to see the Vial effects.

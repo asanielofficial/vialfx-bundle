@@ -5,7 +5,7 @@ synthesizer Vital and a few new ones in the same style. VST3 and CLAP for Window
 
 ## Next release (not yet published)
 
-- **LV2 for Linux:** every plugin builds as an `.lv2` bundle (X11 editor, MIDI input for Filter and Resonator).
+- **LV2 for Linux, Windows and macOS:** every plugin builds as an `.lv2` bundle (MIDI input for Filter and Resonator), also in the Windows and macOS installers. Tested in a lilv host on Linux; Windows and macOS builds are new.
 - **AU for macOS:** every plugin builds as an Audio Unit (`.component`), also in the macOS .pkg installer. Untested on hardware so far.
 
 ## What's new in 1.3

@@ -163,7 +163,13 @@ function(vitalfx_add_plugin)
     set_target_properties(${lv2_name} PROPERTIES
       PREFIX "" OUTPUT_NAME ${lv2_base}
       LIBRARY_OUTPUT_DIRECTORY "${lv2_bundle}"
-      LIBRARY_OUTPUT_DIRECTORY_RELEASE "${lv2_bundle}")
+      LIBRARY_OUTPUT_DIRECTORY_RELEASE "${lv2_bundle}"
+      RUNTIME_OUTPUT_DIRECTORY "${lv2_bundle}"
+      RUNTIME_OUTPUT_DIRECTORY_RELEASE "${lv2_bundle}")
+    if(APPLE)
+      # The wrapper writes "<name>.dylib" into the .ttl files on macOS.
+      set_target_properties(${lv2_name} PROPERTIES SUFFIX ".dylib")
+    endif()
     add_custom_command(TARGET ${lv2_name} POST_BUILD
       COMMAND $<TARGET_FILE:vialfx_lv2_ttl_gen> $<TARGET_FILE:${lv2_name}> ${lv2_base}
       WORKING_DIRECTORY "${lv2_bundle}"

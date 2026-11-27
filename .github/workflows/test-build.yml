@@ -1,6 +1,6 @@
 name: Test build
 
-# A quick portable build for trying a change: one platform (Windows or Linux), VST3 only, one zip. No installers,
+# A quick portable build for trying a change: one platform (Windows or Linux), VST3 only (plus LV2 when ticked), one zip. No installers,
 # no CLAP, no macOS, no host tests. Run it from the Actions tab and pick the platform; optionally name a single
 # plugin (CMake target name without _VST3, e.g. Tremolo) to build just that one. The full builds are in
 # "Build VialFX-Bundle".
@@ -16,6 +16,10 @@ on:
         description: "Plugin target to build (all, or e.g. Tremolo, FreqShifter, PitchShifter)"
         type: string
         default: all
+      lv2:
+        description: "Also build the LV2 version and add it to the zip"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -48,13 +52,14 @@ jobs:
           list="${{ inputs.plugin }}"
           [ "$list" = "all" ] && list="$PLUGINS"
           targets=""
-          for p in $list; do targets="$targets ${p}_VST3"; done
+          for p in $list; do targets="$targets ${p}_VST3"; [ "${{ inputs.lv2 }}" = "true" ] && targets="$targets ${p}_LV2"; done
           cmake --build build --target $targets
 
       - name: Zip
         run: |
           mkdir -p VialFX-Bundle/VST3
           cp -r build/plugins/*_artefacts/Release/VST3/*.vst3 VialFX-Bundle/VST3/
+          if [ "${{ inputs.lv2 }}" = "true" ]; then mkdir -p VialFX-Bundle/LV2; cp -r build/plugins/*_artefacts/Release/LV2/*.lv2 VialFX-Bundle/LV2/; fi
           cp LICENSE VialFX-Bundle/
           zip -qr VialFX-Bundle-linux-portable.zip VialFX-Bundle
           ls -l VialFX-Bundle-linux-portable.zip
@@ -82,7 +87,7 @@ jobs:
         run: |
           $list = "${{ inputs.plugin }}"
           if ($list -eq "all") { $list = $env:PLUGINS }
-          $targets = @($list -split '\s+' | Where-Object { $_ } | ForEach-Object { "${_}_VST3" })
+          $targets = @($list -split '\s+' | Where-Object { $_ } | ForEach-Object { "${_}_VST3"; if ("${{ inputs.lv2 }}" -eq "true") { "${_}_LV2" } })
           cmake --build build --target $targets
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
@@ -91,6 +96,10 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force VialFX-Bundle/VST3 | Out-Null
           Get-ChildItem build/plugins/*_artefacts/Release/VST3/*.vst3 | Copy-Item -Destination VialFX-Bundle/VST3 -Recurse
+          if ("${{ inputs.lv2 }}" -eq "true") {
+            New-Item -ItemType Directory -Force VialFX-Bundle/LV2 | Out-Null
+            Get-ChildItem build/plugins/*_artefacts/Release/LV2/*.lv2 | Copy-Item -Destination VialFX-Bundle/LV2 -Recurse
+          }
           Copy-Item LICENSE VialFX-Bundle/
           Compress-Archive -Path VialFX-Bundle -DestinationPath VialFX-Bundle-windows-portable.zip
 

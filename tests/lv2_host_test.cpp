@@ -4,7 +4,9 @@
 #include <lilv/lilv.h>
 #include <lv2/ui/ui.h>
 #include <lv2/instance-access/instance-access.h>
-#include <X11/Xlib.h>
+#ifdef __linux__
+ #include <X11/Xlib.h>
+#endif
 #include <unistd.h>
 #include <dlfcn.h>
 #include <lv2/urid/urid.h>
@@ -102,6 +104,7 @@ int main (int argc, char** argv)
     lilv_instance_deactivate (inst);
 
     // --ui <screenshot-wait-seconds>: open the plugin's X11 editor in a window (needs an X display) and keep it up.
+#ifdef __linux__
     if (argc >= 3 && std::strcmp (argv[2], "--ui") == 0)
     {
         const int waitSec = argc >= 4 ? std::atoi (argv[3]) : 3;
@@ -140,6 +143,7 @@ int main (int argc, char** argv)
         XDestroyWindow (dpy, parent); XCloseDisplay (dpy);
         std::printf ("UI closed cleanly\n");
     }
+#endif
     lilv_instance_free (inst);
     std::printf ("energy in %.3f out %.3f finite %d\n", energyIn, energyOut, (int) finite);
     if (! finite) { std::printf ("FAIL: non-finite output\n"); return 1; }

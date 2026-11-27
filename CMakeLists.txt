@@ -14,15 +14,11 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-# Current scope: VST3 on Windows, Linux and macOS, plus AU on macOS and LV2 on Linux. CLAP is built alongside VST3 (disable with -DVITALFX_ENABLE_CLAP=OFF).
+# Current scope: VST3 on Windows, Linux and macOS, plus AU on macOS and LV2 everywhere. CLAP is built alongside VST3 (disable with -DVITALFX_ENABLE_CLAP=OFF).
 option(VITALFX_ENABLE_CLAP "Also build CLAP versions (needs clap-juce-extensions)" ON)
 
-# LV2 (Linux): JUCE 6.0.5 still ships its legacy LV2 wrapper (the Projucer used it); we build it from CMake.
-set(_lv2_default OFF)
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  set(_lv2_default ON)
-endif()
-option(VITALFX_ENABLE_LV2 "Also build LV2 versions (JUCE's legacy LV2 wrapper)" ${_lv2_default})
+# LV2 (Linux, Windows, macOS): JUCE 6.0.5 still ships its legacy LV2 wrapper (the Projucer used it); we build it from CMake.
+option(VITALFX_ENABLE_LV2 "Also build LV2 versions (JUCE's legacy LV2 wrapper)" ON)
 
 include(FetchContent)
 set(FETCHCONTENT_QUIET OFF)

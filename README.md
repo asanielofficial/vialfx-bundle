@@ -7,8 +7,11 @@ Utility, Freq Shifter, Vibrato, Tremolo, Morph and Resonator.** It is built from
 [License](#license) for the origin of the code) and shares its look, skins and presets with the main
 [VialFX](https://github.com/asanielofficial/vialfx) plugin.
 
+> **Install:** get [VialLauncher](https://github.com/asanielofficial/VialLauncher). It installs the bundle (VST3, CLAP, LV2, and AU on macOS) and keeps it up to date.
+> Prefer to do it by hand? See [Installing](#installing).
+
 > **Status:** version 1.3. VST3 and CLAP builds for Windows, Linux and macOS (plus LV2, and AU on macOS from the next
-> release) are produced by CI as portable archives; install them with **VialLauncher** or copy them by hand.
+> release) are produced by CI as portable archives; install them with VialLauncher or copy them by hand.
 > Windows and Linux are tested by hand; the macOS builds (universal Intel + Apple Silicon, ad-hoc signed) are built by CI and have had limited testing on
 > hardware.
 
@@ -32,10 +35,10 @@ System Settings > Privacy & Security the first time.
 
 ## Installing
 
-- **VialLauncher:** installs and updates the bundle for you (separate repository).
-- **Linux:** unpack `VialFX-Bundle-1.3-linux.tar.gz` and copy the `.vst3` folders to `~/.vst3`, the `.clap` files to
-  `~/.clap` and the `.lv2` folders to `~/.lv2` (LV2 appears from the next release).
-- **Manual (zip):** copy the `.vst3` folders, `.clap` files and `.lv2` folders (and `.component` on macOS) from
+- **VialLauncher (recommended):** [VialLauncher](https://github.com/asanielofficial/VialLauncher) installs and updates the bundle for you; pick the plugins and formats there.
+- **Manual, Linux:** unpack `VialFX-Bundle-1.3-linux.tar.gz` and copy the `.vst3` folders to `~/.vst3`, the `.clap` files to
+  `~/.clap` and the `.lv2` folders to `~/.lv2` (LV2 ships from the next release).
+- **Manual, Windows and macOS (zip):** copy the `.vst3` folders, `.clap` files and `.lv2` folders (and `.component` on macOS) from
   `windows.zip` or `macos.zip` into your plugin folders (`C:\Program Files\Common Files\VST3`, `\CLAP`, `\LV2`;
   `/Library/Audio/Plug-Ins/VST3`, `CLAP`, `LV2`, `Components`), then rescan in your DAW. The macOS builds are
   ad-hoc signed; allow them in System Settings > Privacy & Security the first time.

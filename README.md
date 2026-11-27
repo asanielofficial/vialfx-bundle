@@ -39,8 +39,8 @@ System Settings > Privacy & Security the first time.
 - **macOS:** open `VialFX-Bundle-1.3-Setup-macos.pkg`, choose *Customize* to pick plugins and formats. Plugins go to
   `/Library/Audio/Plug-Ins/VST3` and `/Library/Audio/Plug-Ins/CLAP`. The package is unsigned: right-click it and
   choose *Open* the first time.
-- **Linux:** unpack `VialFX-Bundle-1.3-linux.tar.gz` and copy the `.vst3` folders to `~/.vst3` and the `.clap` files to
-  `~/.clap`.
+- **Linux:** unpack `VialFX-Bundle-1.3-linux.tar.gz` and copy the `.vst3` folders to `~/.vst3`, the `.clap` files to
+  `~/.clap` and the `.lv2` folders to `~/.lv2` (LV2 appears from the next release).
 - **Manual (zip):** copy the `.vst3` folders and `.clap` files from `VialFX-Bundle-1.3-windows.zip` or
   `-macos.zip` into your system plugin folders, then rescan in your DAW.
 
@@ -58,7 +58,7 @@ them, use the Windows uninstaller (*Apps > Installed apps*) or delete the plugin
 - **Skins:** `.vialskin` files, a full **Skin Editor** with bins, glow, gradients and bevels, and **Sync all** to
   restyle every plugin at once.
 - **Resizable windows** with locked proportions, a preset browser, a built-in volume slider and level meter.
-- **VST3 and CLAP** on Windows, Linux and macOS (universal), GPL-3.0.
+- **VST3 and CLAP** on Windows, Linux and macOS (universal), **LV2** on Linux and **Audio Unit (AU)** on macOS, GPL-3.0.
 
 ## The plugins
 
@@ -165,7 +165,7 @@ resized.
 
 ## Window and host support
 
-- **Formats:** VST3 and CLAP (build with `-DVITALFX_ENABLE_CLAP=OFF` to skip CLAP).
+- **Formats:** VST3 and CLAP everywhere (build with `-DVITALFX_ENABLE_CLAP=OFF` to skip CLAP), LV2 on Linux (`-DVITALFX_ENABLE_LV2=OFF` to skip; JUCE 6's legacy LV2 wrapper with an X11 editor, URIs `urn:vialfx:<Plugin>`), and AU on macOS. LV2 is checked in CI with a small lilv host (discovery, audio, editor); AU has not been tested on a Mac yet.
 - **Platforms:** Windows (x64), Linux (x64) and macOS (universal x86_64 + arm64, 10.13+).
 - **Resizing:** every plugin window can be resized with its proportions locked; sizes scale smoothly.
 - **Hosts:** only the effect's own parameters, bypass and the volume are exposed for automation.

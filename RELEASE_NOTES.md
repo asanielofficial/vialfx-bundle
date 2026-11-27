@@ -3,6 +3,11 @@
 Sixteen audio effect plugins, each one its own plugin in its own window, built from the effects of the open-source
 synthesizer Vital and a few new ones in the same style. VST3 and CLAP for Windows, Linux and macOS.
 
+## Next release (not yet published)
+
+- **LV2 for Linux:** every plugin builds as an `.lv2` bundle (X11 editor, MIDI input for Filter and Resonator).
+- **AU for macOS:** every plugin builds as an Audio Unit (`.component`), also in the macOS .pkg installer. Untested on hardware so far.
+
 ## What's new in 1.3
 
 - **New: Vial Resonator.** A tuned resonator with four styles (Comb, Modal, String, Formant), Resonance, Damping,

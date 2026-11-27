@@ -555,6 +555,13 @@ public:
         const ScopedJuceInitialiser_GUI juceInitialiser;
 
         MessageManager::getInstance()->setCurrentThreadAsMessageThread();
+
+        // VialFX: connect to the X server on the message thread before the dispatch loop starts.
+        // Otherwise the first editor is created on the host's UI thread (under a MessageManagerLock) and its
+        // X connection registers a file descriptor with the run loop, which the idle message thread has locked: deadlock.
+        if (std::getenv ("DISPLAY") != nullptr)
+            Desktop::getInstance();
+
         initialised = true;
 
         MessageManager::getInstance()->runDispatchLoop();

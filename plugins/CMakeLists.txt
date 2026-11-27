@@ -127,6 +127,49 @@ function(vitalfx_add_plugin)
       CLAP_ID "com.vialfx.${P_NAME}"
       CLAP_FEATURES audio-effect)
   endif()
+
+  if(VITALFX_ENABLE_LV2)
+    set(lv2_name ${P_NAME}_LV2)
+    # LV2 plugin class (what hosts show in their plugin menus).
+    set(lv2_class UtilityPlugin)
+    foreach(pair Chorus:ChorusPlugin Compressor:CompressorPlugin Delay:DelayPlugin Distortion:DistortionPlugin
+                 EQ:EQPlugin Filter:FilterPlugin Flanger:FlangerPlugin Phaser:PhaserPlugin Reverb:ReverbPlugin
+                 PitchShifter:PitchPlugin FreqShifter:SpectralPlugin Vibrato:ModulatorPlugin Tremolo:ModulatorPlugin
+                 Morph:WaveshaperPlugin Resonator:FilterPlugin)
+      string(REPLACE ":" ";" kv ${pair})
+      list(GET kv 0 k)
+      list(GET kv 1 v)
+      if(P_NAME STREQUAL k)
+        set(lv2_class ${v})
+      endif()
+    endforeach()
+    set(lv2_bundle "${CMAKE_CURRENT_BINARY_DIR}/${P_NAME}_artefacts/$<CONFIG>/LV2/Vial ${P_PRODUCT}.lv2")
+    set(lv2_base "Vial_${P_NAME}")
+    add_library(${lv2_name} MODULE ${juce_SOURCE_DIR}/modules/juce_audio_plugin_client/LV2/juce_LV2_Wrapper.cpp)
+    target_include_directories(${lv2_name} PRIVATE $<TARGET_PROPERTY:${P_NAME},INCLUDE_DIRECTORIES> ${CMAKE_SOURCE_DIR}/tools/lv2_include)
+    target_compile_definitions(${lv2_name} PRIVATE
+      JucePlugin_Build_LV2=1
+      JucePlugin_LV2URI="urn:vialfx:${P_NAME}"
+      JucePlugin_LV2Category="${lv2_class}"
+      JucePlugin_MaxNumInputChannels=2
+      JucePlugin_MaxNumOutputChannels=2
+      JucePlugin_WantsLV2Presets=0
+      JucePlugin_WantsLV2TimePos=0
+      JucePlugin_WantsLV2State=1)
+    target_link_libraries(${lv2_name} PRIVATE ${P_NAME})
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+      target_link_libraries(${lv2_name} PRIVATE "-Wl,--no-undefined")
+    endif()
+    set_target_properties(${lv2_name} PROPERTIES
+      PREFIX "" OUTPUT_NAME ${lv2_base}
+      LIBRARY_OUTPUT_DIRECTORY "${lv2_bundle}"
+      LIBRARY_OUTPUT_DIRECTORY_RELEASE "${lv2_bundle}")
+    add_custom_command(TARGET ${lv2_name} POST_BUILD
+      COMMAND $<TARGET_FILE:vialfx_lv2_ttl_gen> $<TARGET_FILE:${lv2_name}> ${lv2_base}
+      WORKING_DIRECTORY "${lv2_bundle}"
+      VERBATIM)
+    add_dependencies(${lv2_name} vialfx_lv2_ttl_gen)
+  endif()
 endfunction()
 
 # EffectKind index -> plugin. Four-character plugin codes must stay unique and stable.

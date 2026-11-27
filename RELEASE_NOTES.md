@@ -5,8 +5,9 @@ synthesizer Vital and a few new ones in the same style. VST3 and CLAP for Window
 
 ## Next release (not yet published)
 
-- **LV2 for Linux, Windows and macOS:** every plugin builds as an `.lv2` bundle (MIDI input for Filter and Resonator), also in the Windows and macOS installers. Tested in a lilv host on Linux; Windows and macOS builds are new.
-- **AU for macOS:** every plugin builds as an Audio Unit (`.component`), also in the macOS .pkg installer. Untested on hardware so far.
+- **LV2 for Linux, Windows and macOS:** every plugin builds as an `.lv2` bundle (MIDI input for Filter and Resonator). Tested in a lilv host on Linux; Windows and macOS builds are new.
+- **No more installers:** VialLauncher (separate repository) replaces the Windows .exe and macOS .pkg; releases ship portable archives only.
+- **AU for macOS:** every plugin builds as an Audio Unit (`.component`). Untested on hardware so far.
 
 ## What's new in 1.3
 
@@ -17,7 +18,6 @@ synthesizer Vital and a few new ones in the same style. VST3 and CLAP for Window
 - **Vial Morph:** the Spectral Table and Distort Table menus now have a wavetable name bar with previous/next, the
   wavetable browser and SAVE; the Random Amplitudes dice shows hover and pressed states; knobs that were shrunk for
   Random Amplitudes now return to full size.
-- The Windows and macOS installers include the Resonator as its own entry.
 
 ## What was new in 1.2
 
@@ -37,8 +37,7 @@ synthesizer Vital and a few new ones in the same style. VST3 and CLAP for Window
 
 | File | What it is |
 |---|---|
-| `VialFX-Bundle-1.3-Setup-windows.exe` | Windows installer: choose plugins and formats (VST3, CLAP) |
-| `VialFX-Bundle-1.3-Setup-macos.pkg` | macOS installer (universal Intel + Apple Silicon): choose plugins and formats |
+| `VialFX-Bundle-1.3-Setup-windows.exe`, `VialFX-Bundle-1.3-Setup-macos.pkg` | Installers (1.3 only; later releases use VialLauncher) |
 | `VialFX-Bundle-1.3-linux.tar.gz` | Linux VST3 + CLAP |
 | `VialFX-Bundle-1.3-windows.zip`, `VialFX-Bundle-1.3-macos.zip` | Manual-install archives |
 

@@ -7,9 +7,9 @@ Utility, Freq Shifter, Vibrato, Tremolo, Morph and Resonator.** It is built from
 [License](#license) for the origin of the code) and shares its look, skins and presets with the main
 [VialFX](https://github.com/asanielofficial/vialfx) plugin.
 
-> **Status:** version 1.3. VST3 and CLAP builds for Windows, Linux and macOS, plus a
-> Windows installer (.exe) and a macOS installer (.pkg), are produced by CI. Windows and Linux are tested by hand;
-> the macOS builds (universal Intel + Apple Silicon, ad-hoc signed) are built by CI and have had limited testing on
+> **Status:** version 1.3. VST3 and CLAP builds for Windows, Linux and macOS (plus LV2, and AU on macOS from the next
+> release) are produced by CI as portable archives; install them with **VialLauncher** or copy them by hand.
+> Windows and Linux are tested by hand; the macOS builds (universal Intel + Apple Silicon, ad-hoc signed) are built by CI and have had limited testing on
 > hardware.
 
 **Contents:** [Download](#download) · [Installing](#installing) · [Highlights](#highlights) · [The plugins](#the-plugins) ·
@@ -21,10 +21,10 @@ The current stable version is [**VialFX-Bundle 1.3**](https://github.com/asaniel
 
 | File | What it is |
 |---|---|
-| `VialFX-Bundle-1.3-Setup-windows.exe` | Windows installer: pick the plugins and the formats (VST3, CLAP) you want |
-| `VialFX-Bundle-1.3-Setup-macos.pkg` | macOS installer: pick the plugins and formats |
 | `VialFX-Bundle-1.3-linux.tar.gz` | Linux VST3 + CLAP (copy into `~/.vst3` and `~/.clap`) |
-| `VialFX-Bundle-1.3-windows.zip`, `VialFX-Bundle-1.3-macos.zip` | Manual-install archives |
+| `VialFX-Bundle-1.3-windows.zip`, `VialFX-Bundle-1.3-macos.zip` | Portable archives (what VialLauncher installs) |
+
+Version 1.3 also has Windows and macOS installers; later releases don't, because VialLauncher replaces them.
 
 The newest `main` build is published as the [nightly pre-release](https://github.com/asanielofficial/vialfx-bundle/releases/tag/nightly).
 These builds are unsigned (macOS: ad-hoc signed) and meant for testing; on macOS you may need to allow them in
@@ -32,20 +32,16 @@ System Settings > Privacy & Security the first time.
 
 ## Installing
 
-- **Windows:** run `VialFX-Bundle-1.3-Setup-windows.exe`. Tick the plugins you want (each plugin is its own entry) and
-  whether to install VST3, CLAP or both. VST3 goes to `C:\Program Files\Common Files\VST3`, CLAP to
-  `C:\Program Files\Common Files\CLAP`. Windows SmartScreen may warn about the unsigned installer: choose *More
-  info > Run anyway*.
-- **macOS:** open `VialFX-Bundle-1.3-Setup-macos.pkg`, choose *Customize* to pick plugins and formats. Plugins go to
-  `/Library/Audio/Plug-Ins/VST3` and `/Library/Audio/Plug-Ins/CLAP`. The package is unsigned: right-click it and
-  choose *Open* the first time.
+- **VialLauncher:** installs and updates the bundle for you (separate repository).
 - **Linux:** unpack `VialFX-Bundle-1.3-linux.tar.gz` and copy the `.vst3` folders to `~/.vst3`, the `.clap` files to
   `~/.clap` and the `.lv2` folders to `~/.lv2` (LV2 appears from the next release).
-- **Manual (zip):** copy the `.vst3` folders and `.clap` files from `VialFX-Bundle-1.3-windows.zip` or
-  `-macos.zip` into your system plugin folders, then rescan in your DAW.
+- **Manual (zip):** copy the `.vst3` folders, `.clap` files and `.lv2` folders (and `.component` on macOS) from
+  `windows.zip` or `macos.zip` into your plugin folders (`C:\Program Files\Common Files\VST3`, `\CLAP`, `\LV2`;
+  `/Library/Audio/Plug-Ins/VST3`, `CLAP`, `LV2`, `Components`), then rescan in your DAW. The macOS builds are
+  ad-hoc signed; allow them in System Settings > Privacy & Security the first time.
 
 Plugins are named **Vial Chorus, Vial Compressor** and so on, so they sort together in your plugin list. To remove
-them, use the Windows uninstaller (*Apps > Installed apps*) or delete the plugin files.
+them, delete the plugin files (or remove them in VialLauncher).
 
 ## Highlights
 
@@ -185,7 +181,7 @@ sudo apt-get install build-essential ninja-build pkg-config libasound2-dev libfr
 ```
 
 To build only some plugins: `-DVITALFX_ONLY="Reverb;Delay"`. The GitHub Actions workflows are `Build VialFX-Bundle`
-(all platforms, installers, host tests; run on demand and publishes the nightly pre-release) and `Test build` (one
+(all platforms, host tests; run on demand and publishes the nightly pre-release) and `Test build` (one
 portable VST3 zip for Windows or Linux).
 
 ## Tests

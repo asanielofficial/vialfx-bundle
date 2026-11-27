@@ -1,7 +1,7 @@
 name: Build VialFX-Bundle
 
 # Current scope: VST3 and CLAP on Linux, Windows and macOS; LV2 on all three; AU on macOS.
-# Whole builds (all platforms, installers, CLAP, host tests) run only when asked for, from the Actions tab. Pushes do
+# Whole builds (all platforms, CLAP, LV2, host tests) run only when asked for, from the Actions tab. Pushes do
 # not start them; use "Test build" for a quick portable Windows or Linux build of a change.
 on:
   workflow_dispatch:
@@ -144,19 +144,6 @@ jobs:
           name: dist-windows-zip
           path: VialFX-Bundle-${{ env.VERSION }}-windows.zip
 
-      - name: Build installer
-        shell: pwsh
-        run: |
-          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
-          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; }
-          & $iscc "/DSourceDir=$PWD\VialFX-Bundle" "/DOutputDir=$PWD" installer\windows\vialfx.iss
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: dist-windows-installer
-          path: VialFX-Bundle-${{ env.VERSION }}-Setup-windows.exe
-
   macos:
     runs-on: macos-15
     env:
@@ -201,15 +188,7 @@ jobs:
           name: dist-macos-zip
           path: VialFX-Bundle-${{ env.VERSION }}-macos.zip
 
-      - name: Build installer (.pkg)
-        run: installer/macos/build_pkg.sh VialFX-Bundle . ${{ env.VERSION }}
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: dist-macos-installer
-          path: VialFX-Bundle-${{ env.VERSION }}-Setup-macos.pkg
-
-  # GitHub always wraps workflow artifacts in a .zip. To hand users the real files (tar.gz, zip, .exe, .pkg)
+  # GitHub always wraps workflow artifacts in a .zip. To hand users the real files (tar.gz and zip)
   # without that extra layer, every push to main refreshes a "nightly" pre-release with the files as assets.
   release:
     needs: [linux, windows, macos]
@@ -235,7 +214,7 @@ jobs:
           gh release delete nightly --yes --cleanup-tag || true
           gh release create nightly dist/* --prerelease --target "$GITHUB_SHA" \
             --title "VialFX-Bundle ${{ env.VERSION }} - latest build (main)" \
-            --notes "Automated build of commit $GITHUB_SHA. Installers: VialFX-Bundle-${{ env.VERSION }}-Setup-windows.exe and VialFX-Bundle-${{ env.VERSION }}-Setup-macos.pkg. Manual installs: VialFX-Bundle-${{ env.VERSION }}-linux.tar.gz, VialFX-Bundle-${{ env.VERSION }}-windows.zip, VialFX-Bundle-${{ env.VERSION }}-macos.zip. Unsigned test build; see the latest stable release for the supported version."
+            --notes "Automated build of commit $GITHUB_SHA. Portable archives (install with VialLauncher or copy by hand): VialFX-Bundle-${{ env.VERSION }}-linux.tar.gz, VialFX-Bundle-${{ env.VERSION }}-windows.zip, VialFX-Bundle-${{ env.VERSION }}-macos.zip. Unsigned test build; see the latest stable release for the supported version."
 
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/v')

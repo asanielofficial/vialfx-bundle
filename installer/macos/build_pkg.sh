@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build VialFX-Bundle-$VERSION-Setup-macos.pkg from a folder containing VST3/ and CLAP/ (plus LICENSE).
+# Build VialFX-Bundle-$VERSION-Setup-macos.pkg from a folder containing VST3/, CLAP/ and AU/ (plus LICENSE).
 # Usage: installer/macos/build_pkg.sh <bundle-dir> <output-dir> [version]
 set -euo pipefail
 SRC="$(cd "$1" && pwd)"; OUT="$(cd "$2" && pwd)"; VERSION="${3:-1.3}"
@@ -23,6 +23,7 @@ build_component() {  # format ext dest
 }
 build_component vst3 vst3 "/Library/Audio/Plug-Ins/VST3"
 build_component clap clap "/Library/Audio/Plug-Ins/CLAP"
+build_component au component "/Library/Audio/Plug-Ins/Components"
 
 {
   echo '<?xml version="1.0" encoding="utf-8"?>'
@@ -31,7 +32,7 @@ build_component clap clap "/Library/Audio/Plug-Ins/CLAP"
   echo '  <license file="LICENSE.txt"/>'
   echo '  <options customize="always" require-scripts="false" hostArchitectures="x86_64,arm64"/>'
   echo '  <choices-outline>'
-  for fmt in vst3 clap; do
+  for fmt in vst3 clap au; do
     echo "    <line choice=\"$fmt\">"
     for e in "${EFFECTS[@]}"; do echo "      <line choice=\"$fmt.$(lower "$e")\"/>"; done
     echo '    </line>'
@@ -39,7 +40,8 @@ build_component clap clap "/Library/Audio/Plug-Ins/CLAP"
   echo '  </choices-outline>'
   echo '  <choice id="vst3" title="VST3 plugins" description="Installed to /Library/Audio/Plug-Ins/VST3"/>'
   echo '  <choice id="clap" title="CLAP plugins" description="Installed to /Library/Audio/Plug-Ins/CLAP"/>'
-  for fmt in vst3 clap; do
+  echo '  <choice id="au" title="Audio Unit (AU) plugins" description="Installed to /Library/Audio/Plug-Ins/Components"/>'
+  for fmt in vst3 clap au; do
     for e in "${EFFECTS[@]}"; do
       id="com.vialfx.$fmt.$(lower "$e")"
       echo "  <choice id=\"$fmt.$(lower "$e")\" title=\"Vial $e\" start_selected=\"true\"><pkg-ref id=\"$id\"/></choice>"

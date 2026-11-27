@@ -14,7 +14,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-# Current scope: VST3 on Windows, Linux and macOS. CLAP is built alongside VST3 (disable with -DVITALFX_ENABLE_CLAP=OFF).
+# Current scope: VST3 on Windows, Linux and macOS, plus AU on macOS. CLAP is built alongside VST3 (disable with -DVITALFX_ENABLE_CLAP=OFF).
 option(VITALFX_ENABLE_CLAP "Also build CLAP versions (needs clap-juce-extensions)" ON)
 
 include(FetchContent)
@@ -38,6 +38,9 @@ if(VITALFX_ENABLE_CLAP)
 endif()
 
 set(VITALFX_FORMATS VST3)
+if(APPLE)
+  list(APPEND VITALFX_FORMATS AU)   # Audio Units (.component), macOS only
+endif()
 
 add_subdirectory(plugins)
 

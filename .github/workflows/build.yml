@@ -94,11 +94,12 @@ jobs:
 
       - name: LV2 checks (discovery, instantiate, process audio)
         run: |
-          g++ -std=c++17 tests/lv2_host_test.cpp $(pkg-config --cflags --libs lilv-0) -o lv2_host_test
+          g++ -std=c++17 tests/lv2_host_test.cpp $(pkg-config --cflags --libs lilv-0 x11) -ldl -o lv2_host_test
           export LV2_PATH=$(mktemp -d)
           cp -r build/plugins/*_artefacts/Release/LV2/*.lv2 "$LV2_PATH"/
           lv2ls
           for uri in $(lv2ls | grep '^urn:vialfx:'); do ./lv2_host_test "$uri"; done
+          xvfb-run -a ./lv2_host_test urn:vialfx:Resonator --ui 3
 
       - name: Collect bundle
         run: |

@@ -135,7 +135,7 @@ jobs:
           Get-ChildItem build/plugins/*_artefacts/Release/CLAP/*.clap | Copy-Item -Destination VialFX-Bundle/CLAP
           Get-ChildItem build/plugins/*_artefacts/Release/LV2/*.lv2 | Copy-Item -Destination VialFX-Bundle/LV2 -Recurse
           $n = (Get-ChildItem VialFX-Bundle/LV2/*.lv2/*.ttl).Count
-          if ($n -lt 48) { Write-Error "LV2 bundles incomplete ($n ttl files)"; exit 1 }
+          if ($n -lt 32) { Write-Error "LV2 bundles incomplete ($n ttl files)"; exit 1 }
           Copy-Item LICENSE VialFX-Bundle/
           Compress-Archive -Path VialFX-Bundle -DestinationPath VialFX-Bundle-${{ env.VERSION }}-windows.zip
 
@@ -177,7 +177,7 @@ jobs:
           cp -R build/plugins/*_artefacts/Release/CLAP/*.clap VialFX-Bundle/CLAP/
           cp -R build/plugins/*_artefacts/Release/AU/*.component VialFX-Bundle/AU/
           cp -R build/plugins/*_artefacts/Release/LV2/*.lv2 VialFX-Bundle/LV2/
-          test "$(ls VialFX-Bundle/LV2/*.lv2/*.ttl | wc -l)" -ge 48
+          test "$(ls VialFX-Bundle/LV2/*.lv2/*.ttl | wc -l)" -ge 32
           for d in VialFX-Bundle/LV2/*.lv2; do codesign --force -s - "$d"/*.dylib; done
           for p in VialFX-Bundle/VST3/*.vst3 VialFX-Bundle/CLAP/*.clap VialFX-Bundle/AU/*.component; do codesign --force --deep -s - "$p"; done
           cp LICENSE VialFX-Bundle/

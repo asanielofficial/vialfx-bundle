@@ -10,8 +10,7 @@ Utility, Freq Shifter, Vibrato, Tremolo, Morph and Resonator.** It is built from
 > **Install:** get [VialLauncher](https://github.com/asanielofficial/VialLauncher). It installs the bundle (VST3, CLAP, LV2, and AU on macOS) and keeps it up to date.
 > Prefer to do it by hand? See [Installing](#installing).
 
-> **Status:** version 1.3. VST3 and CLAP builds for Windows, Linux and macOS (plus LV2, and AU on macOS from the next
-> release) are produced by CI as portable archives; install them with VialLauncher or copy them by hand.
+> **Status:** version 1.4. VST3, CLAP and LV2 builds for Windows, Linux and macOS (plus AU on macOS) are produced by CI as portable archives; install them with VialLauncher or copy them by hand.
 > Windows and Linux are tested by hand; the macOS builds (universal Intel + Apple Silicon, ad-hoc signed) are built by CI and have had limited testing on
 > hardware.
 
@@ -20,14 +19,14 @@ Utility, Freq Shifter, Vibrato, Tremolo, Morph and Resonator.** It is built from
 
 ## Download
 
-The current stable version is [**VialFX-Bundle 1.3**](https://github.com/asanielofficial/vialfx-bundle/releases/latest):
+The current stable version is [**VialFX-Bundle 1.4**](https://github.com/asanielofficial/vialfx-bundle/releases/latest):
 
 | File | What it is |
 |---|---|
-| `VialFX-Bundle-1.3-linux.tar.gz` | Linux VST3 + CLAP (copy into `~/.vst3` and `~/.clap`) |
-| `VialFX-Bundle-1.3-windows.zip`, `VialFX-Bundle-1.3-macos.zip` | Portable archives (what VialLauncher installs) |
+| `VialFX-Bundle-1.4-linux.tar.gz` | Linux VST3 + CLAP + LV2 (copy into `~/.vst3`, `~/.clap` and `~/.lv2`) |
+| `VialFX-Bundle-1.4-windows.zip`, `VialFX-Bundle-1.4-macos.zip` | Portable archives (what VialLauncher installs) |
 
-Version 1.3 also has Windows and macOS installers; later releases don't, because VialLauncher replaces them.
+The 1.3 release also has Windows and macOS installers; from 1.4 on, VialLauncher replaces them.
 
 The newest `main` build is published as the [nightly pre-release](https://github.com/asanielofficial/vialfx-bundle/releases/tag/nightly).
 These builds are unsigned (macOS: ad-hoc signed) and meant for testing; on macOS you may need to allow them in
@@ -36,8 +35,8 @@ System Settings > Privacy & Security the first time.
 ## Installing
 
 - **VialLauncher (recommended):** [VialLauncher](https://github.com/asanielofficial/VialLauncher) installs and updates the bundle for you; pick the plugins and formats there.
-- **Manual, Linux:** unpack `VialFX-Bundle-1.3-linux.tar.gz` and copy the `.vst3` folders to `~/.vst3`, the `.clap` files to
-  `~/.clap` and the `.lv2` folders to `~/.lv2` (LV2 ships from the next release).
+- **Manual, Linux:** unpack `VialFX-Bundle-1.4-linux.tar.gz` and copy the `.vst3` folders to `~/.vst3`, the `.clap` files to
+  `~/.clap` and the `.lv2` folders to `~/.lv2`.
 - **Manual, Windows and macOS (zip):** copy the `.vst3` folders, `.clap` files and `.lv2` folders (and `.component` on macOS) from
   `windows.zip` or `macos.zip` into your plugin folders (`C:\Program Files\Common Files\VST3`, `\CLAP`, `\LV2`;
   `/Library/Audio/Plug-Ins/VST3`, `CLAP`, `LV2`, `Components`), then rescan in your DAW. The macOS builds are

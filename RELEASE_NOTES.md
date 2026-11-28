@@ -1,15 +1,15 @@
-# VialFX-Bundle 1.3
+# VialFX-Bundle 1.4
 
 Sixteen audio effect plugins, each one its own plugin in its own window, built from the effects of the open-source
-synthesizer Vital and a few new ones in the same style. VST3 and CLAP for Windows, Linux and macOS.
+synthesizer Vital and a few new ones in the same style. VST3, CLAP and LV2 for Windows, Linux and macOS, plus AU for macOS.
 
-## Next release (not yet published)
+## What's new in 1.4
 
 - **LV2 for Linux, Windows and macOS:** every plugin builds as an `.lv2` bundle (MIDI input for Filter and Resonator). Tested in a lilv host on Linux; Windows and macOS builds are new.
 - **No more installers:** VialLauncher (separate repository) replaces the Windows .exe and macOS .pkg; releases ship portable archives only.
 - **AU for macOS:** every plugin builds as an Audio Unit (`.component`). Untested on hardware so far.
 
-## What's new in 1.3
+## What was new in 1.3
 
 - **New: Vial Resonator.** A tuned resonator with four styles (Comb, Modal, String, Formant), Resonance, Damping,
   Stretch, Color and Mix. It follows MIDI notes with up to 16 voices and supports **MPE** (per-note pitch bend, slide and
@@ -37,9 +37,8 @@ synthesizer Vital and a few new ones in the same style. VST3 and CLAP for Window
 
 | File | What it is |
 |---|---|
-| `VialFX-Bundle-1.3-Setup-windows.exe`, `VialFX-Bundle-1.3-Setup-macos.pkg` | Installers (1.3 only; later releases use VialLauncher) |
-| `VialFX-Bundle-1.3-linux.tar.gz` | Linux VST3 + CLAP |
-| `VialFX-Bundle-1.3-windows.zip`, `VialFX-Bundle-1.3-macos.zip` | Manual-install archives |
+| `VialFX-Bundle-1.4-linux.tar.gz` | Linux VST3 + CLAP |
+| `VialFX-Bundle-1.4-windows.zip`, `VialFX-Bundle-1.4-macos.zip` | Manual-install archives |
 
 Builds are unsigned (macOS: ad-hoc signed). Windows: *More info > Run anyway* on the SmartScreen prompt. macOS:
 right-click the installer and choose *Open*. See the README for install locations.
